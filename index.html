@@ -1,0 +1,3797 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QC Sortir & Repair Monitoring System - PT Mada Wikri Tunggal</title>
+  <!-- Chart.js & jsPDF & SheetJS (Excel) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --dark-green: #062D1D;
+      --deep-green: #083B28;
+      --forest-green: #0B5138;
+      --emerald-green: #00B889;
+      --mint-green: #DDF8ED;
+      --white: #FFFFFF;
+      --orange: #FFB000;
+      --green-status: #16A34A;
+      --red: #DC2626;
+      --gray-border: #D1D5DB;
+      --text-dark: #1F2937;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    }
+
+    body {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--mint-green);
+      color: var(--text-dark);
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 270px;
+      background-color: var(--dark-green);
+      color: var(--white);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      box-shadow: 3px 0 10px rgba(0,0,0,0.15);
+      z-index: 10;
+      user-select: none;
+    }
+
+    .sidebar-brand {
+      padding: 22px 20px;
+      background-color: #042115;
+      border-bottom: 2px solid var(--forest-green);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo-badge {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #00B889, #083B28);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 1.25rem;
+      color: #fff;
+      border: 1px solid var(--emerald-green);
+      box-shadow: 0 2px 6px rgba(0,184,137,0.3);
+    }
+
+    .brand-text h2 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #FFFFFF;
+      line-height: 1.2;
+    }
+
+    .brand-text p {
+      font-size: 0.72rem;
+      color: var(--emerald-green);
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      margin-top: 3px;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      padding: 15px 12px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .sidebar-menu li {
+      margin-bottom: 5px;
+    }
+
+    .sidebar-menu a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #E2E8F0;
+      text-decoration: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .sidebar-menu a:hover {
+      background-color: var(--forest-green);
+      color: #FFFFFF;
+      transform: translateX(3px);
+    }
+
+    .sidebar-menu a.active {
+      background-color: var(--emerald-green);
+      color: var(--dark-green);
+      font-weight: 700;
+      box-shadow: 0 4px 10px rgba(0,184,137,0.35);
+    }
+
+    .menu-icon {
+      margin-right: 10px;
+      font-size: 1.1rem;
+      width: 22px;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .badge-open {
+      background-color: var(--orange);
+      color: #000;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .sidebar-footer {
+      padding: 14px 16px;
+      background-color: #042115;
+      border-top: 1px solid var(--forest-green);
+      font-size: 0.75rem;
+      color: #94A3B8;
+      text-align: center;
+    }
+
+    /* MAIN CONTENT */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .header-bar {
+      background-color: var(--deep-green);
+      color: var(--white);
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+
+    .header-bar h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .header-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.85rem;
+    }
+
+    .header-badge {
+      background: rgba(0, 184, 137, 0.2);
+      border: 1px solid var(--emerald-green);
+      color: #A7F3D0;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .content-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px;
+    }
+
+    /* CARDS & UI COMPONENTS */
+    .card {
+      background: var(--white);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(8, 59, 40, 0.08);
+      border: 1px solid rgba(11, 81, 56, 0.15);
+      margin-bottom: 24px;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--deep-green);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--mint-green);
+      padding-bottom: 10px;
+    }
+
+    /* STATS GRID */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--white);
+      border-radius: 10px;
+      padding: 16px;
+      border: 1px solid var(--mint-green);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 5px;
+      height: 100%;
+      background: var(--emerald-green);
+    }
+
+    .stat-card.sortir::before { background: var(--forest-green); }
+    .stat-card.repair::before { background: #0284C7; }
+    .stat-card.hold::before { background: #64748B; }
+    .stat-card.ok::before { background: var(--green-status); }
+    .stat-card.ng::before { background: var(--red); }
+    .stat-card.open::before { background: var(--orange); }
+    .stat-card.closed::before { background: var(--green-status); }
+
+    .stat-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #64748B;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .stat-val {
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: var(--dark-green);
+      line-height: 1.1;
+    }
+
+    .stat-sub {
+      font-size: 0.72rem;
+      color: #94A3B8;
+      margin-top: 5px;
+    }
+
+    /* BUTTONS */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background-color: var(--emerald-green);
+      color: var(--dark-green);
+      font-weight: 700;
+    }
+
+    .btn-primary:hover {
+      background-color: #00d49f;
+      box-shadow: 0 4px 10px rgba(0, 184, 137, 0.35);
+    }
+
+    .btn-dark {
+      background-color: var(--deep-green);
+      color: var(--white);
+    }
+
+    .btn-dark:hover {
+      background-color: var(--forest-green);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--forest-green);
+      color: var(--forest-green);
+    }
+
+    .btn-outline:hover {
+      background-color: var(--mint-green);
+    }
+
+    .btn-danger {
+      background-color: var(--red);
+      color: var(--white);
+    }
+
+    .btn-danger:hover {
+      background-color: #B91C1C;
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      border-radius: 4px;
+    }
+
+    /* FORMS */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .form-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--deep-green);
+    }
+
+    .form-label.required::after {
+      content: " *";
+      color: var(--red);
+    }
+
+    .form-control {
+      padding: 9px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--gray-border);
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+      background: var(--white);
+    }
+
+    .form-control:focus {
+      border-color: var(--emerald-green);
+      box-shadow: 0 0 0 3px rgba(0, 184, 137, 0.15);
+    }
+
+    .form-control[readonly] {
+      background-color: #F8FAFC;
+      color: #475569;
+      cursor: not-allowed;
+      border-color: #E2E8F0;
+      font-weight: 600;
+    }
+
+    .form-calc-box {
+      background: linear-gradient(135deg, #F0FDF4, var(--mint-green));
+      border: 1px solid #86EFAC;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      text-align: center;
+    }
+
+    .calc-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .calc-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--forest-green);
+      margin-bottom: 4px;
+    }
+
+    .calc-val {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--dark-green);
+    }
+
+    .calc-val.val-open {
+      color: #D97706;
+    }
+
+    /* SEARCHABLE DROPDOWN CONTAINER */
+    .search-select-wrapper {
+      position: relative;
+    }
+
+    .search-select-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: 200px;
+      overflow-y: auto;
+      background: #FFFFFF;
+      border: 1px solid var(--emerald-green);
+      border-radius: 0 0 6px 6px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+      z-index: 100;
+      display: none;
+    }
+
+    .search-select-dropdown.show {
+      display: block;
+    }
+
+    .dropdown-item {
+      padding: 9px 12px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border-bottom: 1px solid #F1F5F9;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .dropdown-item:hover {
+      background-color: var(--mint-green);
+      color: var(--deep-green);
+      font-weight: 600;
+    }
+
+    .dropdown-item span.pno {
+      color: #64748B;
+      font-size: 0.78rem;
+    }
+
+    /* TABLES */
+    .table-responsive {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid rgba(11, 81, 56, 0.15);
+      background: var(--white);
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+
+    table.data-table th {
+      background-color: #083B28;
+      color: #FFFFFF;
+      font-weight: 700;
+      padding: 12px 14px;
+      border-bottom: 2px solid var(--emerald-green);
+      white-space: nowrap;
+    }
+
+    table.data-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid #E2E8F0;
+      vertical-align: middle;
+    }
+
+    table.data-table tbody tr:hover {
+      background-color: #F0FDF4;
+    }
+
+    .badge-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 0.75rem;
+      letter-spacing: 0.4px;
+      text-align: center;
+    }
+
+    .badge-status.OPEN {
+      background-color: #FEF3C7;
+      color: #B45309;
+      border: 1px solid #FCD34D;
+    }
+
+    .badge-status.CLOSED {
+      background-color: #DCFCE7;
+      color: #15803D;
+      border: 1px solid #86EFAC;
+    }
+
+    .badge-type {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .badge-type.SORTIR {
+      background-color: #E0E7FF;
+      color: #3730A3;
+    }
+
+    .badge-type.REPAIR {
+      background-color: #E0F2FE;
+      color: #0369A1;
+    }
+
+    /* MODAL */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(6, 45, 29, 0.65);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--white);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 650px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+      border: 2px solid var(--forest-green);
+      overflow: hidden;
+      animation: modalFadeIn 0.2s ease-out;
+    }
+
+    .modal-card.modal-lg {
+      max-width: 900px;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(-15px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .modal-header {
+      background-color: var(--deep-green);
+      color: var(--white);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      color: #A7F3D0;
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      padding: 14px 20px;
+      background: #F8FAFC;
+      border-top: 1px solid #E2E8F0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* FILTERS ROW */
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 220px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding-left: 36px;
+    }
+
+    .search-box::before {
+      content: "🔍";
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.85rem;
+      opacity: 0.6;
+    }
+
+    /* PRINT & FORMAL PDF VIEW */
+    #pdf-print-area {
+      display: none;
+    }
+
+    @media print {
+      body {
+        background: #FFFFFF !important;
+        color: #000000 !important;
+      }
+      .sidebar, .header-bar, .content-body, .modal-backdrop {
+        display: none !important;
+      }
+      #pdf-print-area {
+        display: block !important;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    }
+
+    /* FORMAL COMPANY SHEET STYLING (EXACT TEMPLATE MATCH) */
+    .formal-sheet {
+      width: 100%;
+      background: #FFFFFF;
+      color: #000000;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    .mwt-doc-container {
+      width: 100%;
+      border: 2px solid #000;
+      background: #fff;
+      font-size: 11px;
+    }
+
+    .mwt-doc-header {
+      display: flex;
+      border-bottom: 2px solid #000;
+    }
+
+    .mwt-logo-box {
+      width: 160px;
+      border-right: 2px solid #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+    }
+
+    .mwt-logo-circle {
+      width: 65px;
+      height: 65px;
+      border: 3px solid #085a36;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 5px;
+    }
+
+    .mwt-logo-text-inner {
+      font-family: 'Arial Black', Impact, sans-serif;
+      font-size: 26px;
+      font-weight: 900;
+      color: #085a36;
+      line-height: 1;
+    }
+
+    .mwt-company-title {
+      font-size: 8px;
+      font-weight: 800;
+      color: #000;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .mwt-header-title {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
+
+    .mwt-header-title h2 {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: #000;
+      margin: 0;
+      text-transform: uppercase;
+    }
+
+    .mwt-main-split-body {
+      display: flex;
+      width: 100%;
+    }
+
+    .mwt-left-meta-col {
+      flex: 1;
+      border-right: 2px solid #000;
+    }
+
+    .mwt-right-side-box {
+      width: 250px;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+    }
+
+    .mwt-side-section {
+      border-bottom: 1px solid #000;
+      padding: 6px 10px;
+    }
+
+    .mwt-side-section:last-child {
+      border-bottom: none;
+    }
+
+    .mwt-side-title {
+      font-weight: 800;
+      font-size: 11px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      color: #000;
+    }
+
+    .mwt-lot-list, .mwt-pic-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .mwt-lot-list li, .mwt-pic-list li {
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 2px 0;
+      border-bottom: 1px dotted #ccc;
+    }
+
+    .mwt-lot-list li:last-child, .mwt-pic-list li:last-child {
+      border-bottom: none;
+    }
+
+    table.mwt-meta-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table.mwt-meta-table td {
+      border: 1px solid #000;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      height: 22px;
+    }
+
+    table.mwt-meta-table td.col-label {
+      width: 145px;
+      text-transform: uppercase;
+      background: #fff;
+    }
+
+    table.mwt-meta-table td.col-colon {
+      width: 12px;
+      text-align: center;
+      border-right: none;
+      padding: 4px 0;
+    }
+
+    table.mwt-meta-table td.col-val {
+      border-left: none;
+      font-weight: 600;
+    }
+
+    .mwt-bottom-section {
+      display: flex;
+      border-top: 2px solid #000;
+      min-height: 90px;
+    }
+
+    .mwt-metode-box {
+      width: 240px;
+      border-right: 2px solid #000;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mwt-metode-header {
+      border-bottom: 2px solid #000;
+      padding: 5px 8px;
+      font-weight: 800;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .mwt-metode-content {
+      padding: 8px;
+      flex: 1;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .mwt-sig-box {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .mwt-sig-col {
+      border-right: 1px solid #000;
+      display: flex;
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .mwt-sig-col:last-child {
+      border-right: none;
+    }
+
+    .mwt-sig-title {
+      border-bottom: 2px solid #000;
+      padding: 5px;
+      font-weight: 800;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .mwt-sig-body {
+      flex: 1;
+      min-height: 65px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      position: relative;
+    }
+
+    .mwt-sig-img {
+      max-height: 48px;
+      max-width: 90%;
+      object-fit: contain;
+      margin-bottom: 2px;
+    }
+
+    .ttd-box-wrapper {
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ttd-canvas {
+      border: 1px dashed #94A3B8;
+      border-radius: 4px;
+      background: #FAF5FF;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .ttd-actions {
+      display: flex;
+      gap: 6px;
+      width: 100%;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="logo.png" alt="Logo PT Mada Wikri Tunggal" style="width:44px;height:44px;border-radius:8px;object-fit:contain;border:1px solid var(--emerald-green);box-shadow:0 2px 6px rgba(0,184,137,0.3);">
+      <div class="brand-text">
+        <h2>PT. MADA WIKRI TUNGGAL</h2>
+        <p>QC & REWORK MONITORING</p>
+      </div>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="#/dashboard" class="menu-link active" data-page="dashboard"><span class="menu-icon">📊</span> Dashboard</a></li>
+      <li><a href="#/sortir-form" class="menu-link" data-page="sortir-form"><span class="menu-icon">📝</span> Form Hasil Sortir</a></li>
+      <li><a href="#/repair-form" class="menu-link" data-page="repair-form"><span class="menu-icon">🔧</span> Form Hasil Repair</a></li>
+      <li>
+        <a href="#/open-queue" class="menu-link" data-page="open-queue">
+          <span><span class="menu-icon">⏳</span> Antrean Status OPEN</span>
+          <span class="badge-open" id="badge-open-count">0</span>
+        </a>
+      </li>
+      <li><a href="#/history" class="menu-link" data-page="history"><span class="menu-icon">📑</span> Riwayat Dokumen</a></li>
+      <li><a href="#/parts" class="menu-link" data-page="parts"><span class="menu-icon">🔩</span> Database Part</a></li>
+      <li><a href="#/stats-sortir" class="menu-link" data-page="stats-sortir"><span class="menu-icon">📈</span> Statistik Sortir</a></li>
+      <li><a href="#/stats-repair" class="menu-link" data-page="stats-repair"><span class="menu-icon">📉</span> Statistik Repair</a></li>
+      <li><a href="#/settings" class="menu-link" data-page="settings"><span class="menu-icon">⚙️</span> Pengaturan & Backup</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <div>QC Plant Monitoring v2.0</div>
+      <div style="font-size: 0.68rem; margin-top: 2px;">SQLite Local DB Engine Active</div>
+    </div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <div class="main-wrapper">
+    <header class="header-bar">
+      <h1 id="page-header-title">Dashboard Monitoring</h1>
+      <div class="header-info">
+        <span class="header-badge" id="live-clock">--:--:--</span>
+        <button class="btn btn-primary btn-sm" onclick="exportDatabaseFile()">💾 Backup Database (.db)</button>
+      </div>
+    </header>
+
+    <main class="content-body" id="page-content">
+      <!-- Dynamic pages will render here -->
+    </main>
+  </div>
+
+  <!-- MODAL CONTAINER (FOR DETAIL & UPDATE PROGRES) -->
+  <div class="modal-backdrop" id="app-modal">
+    <div class="modal-card" id="modal-card-box">
+      <div class="modal-header">
+        <h3 id="modal-title">Judul Modal</h3>
+        <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-body-content">
+        <!-- Modal body -->
+      </div>
+      <div class="modal-footer" id="modal-footer-content">
+        <!-- Modal buttons -->
+      </div>
+    </div>
+  </div>
+
+  <!-- PRINT HIDDEN CONTAINER -->
+  <div id="pdf-print-area"></div>
+
+  <!-- CORE STANDALONE LOGIC -->
+  <script>
+    /* =====================================================================
+       1. DATABASE ENGINE (SQLite Compatible Schema in LocalStorage)
+       ===================================================================== */
+    const DB_STORAGE_KEY = 'MWT_QC_DATABASE_V2';
+
+    // Default Initial State
+    function getDefaultDB() {
+      return {
+        master_part: [],
+        document_counter: {
+          SORT: { year: 2026, last_number: 1 },
+          REPAIR: { year: 2026, last_number: 1 }
+        },
+        data_sortir: [
+          {
+            id: 1,
+            doc_no: "SORT-2026-001",
+            date: "2026-11-20",
+            classification: "Sortir Temuan Problem",
+            part_id: 1,
+            part_name: "Bracket Engine Mounting LH",
+            part_no: "MWT-BEM-001",
+            defect: "Burry / Sharp Edge pada lubang baut",
+            subcount: "Stamping Div. 2",
+            qty_hold: 100,
+            qty_ok: 80,
+            qty_ng: 10,
+            qty_open: 10,
+            label: "Tag Kuning QC",
+            description: "Pemeriksaan visual dan deburring",
+            method: "Visual 100% + File Tool",
+            checked_by: "Agus Santoso",
+            controlled_by: "Bambang Irawan",
+            pic_sortir: "Dedi Supardi",
+            status: "OPEN"
+          }
+        ],
+        history_sortir: [
+          {
+            id: 1,
+            sortir_id: 1,
+            timestamp: "2026-11-20 09:30",
+            added_ok: 50,
+            added_ng: 0,
+            pic: "Dedi Supardi",
+            note: "Pemeriksaan batch 1 shift pagi"
+          },
+          {
+            id: 2,
+            sortir_id: 1,
+            timestamp: "2026-11-21 14:15",
+            added_ok: 30,
+            added_ng: 10,
+            pic: "Dedi Supardi",
+            note: "Pemeriksaan lanjutan batch 2, ditemukan 10 NG crack"
+          }
+        ],
+        data_repair: [
+          {
+            id: 1,
+            doc_no: "RP-2026-001",
+            date: "2026-11-19",
+            part_id: 4,
+            part_name: "Cover Cylinder Head",
+            part_no: "MWT-CCH-205",
+            defect: "Minor scratch pada sealing face",
+            subcount: "Machining Line A",
+            qty_hold: 50,
+            qty_ok: 50,
+            qty_ng: 0,
+            qty_open: 0,
+            description: "Polishing permukaan seal",
+            method: "Buffing & Cleaning",
+            checked_by: "Hendra Wijaya",
+            controlled_by: "Bambang Irawan",
+            pic_repair: "Ahmad Dani",
+            status: "CLOSED"
+          }
+        ],
+        history_repair: [
+          {
+            id: 1,
+            repair_id: 1,
+            timestamp: "2026-11-19 10:00",
+            added_ok: 50,
+            added_ng: 0,
+            pic: "Ahmad Dani",
+            note: "Semua 50 pcs berhasil di-buffing tanpa kendala"
+          }
+        ]
+      };
+    }
+
+    // Load Database from LocalStorage (Permanent Persistence)
+    function loadDB() {
+      try {
+        const raw = localStorage.getItem(DB_STORAGE_KEY);
+        if (!raw) {
+          const defaultData = getDefaultDB();
+          saveDB(defaultData);
+          return defaultData;
+        }
+        const parsed = JSON.parse(raw);
+        // Clean default sample parts if user already asked to clean
+        if (localStorage.getItem('MWT_SAMPLE_PARTS_CLEARED') === 'true') {
+          // keep as is
+        }
+        return parsed;
+      } catch (err) {
+        console.error("Error reading database, using default:", err);
+        return getDefaultDB();
+      }
+    }
+
+    // Save Database permanently
+    function saveDB(db) {
+      localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(db));
+      updateOpenBadge();
+    }
+
+    // Generate Auto Document Number (SORT-2026-001, RP-2026-001)
+    function generateDocNumber(type) {
+      const db = loadDB();
+      const currentYear = new Date().getFullYear();
+      if (!db.document_counter) db.document_counter = {};
+      if (!db.document_counter[type] || db.document_counter[type].year !== currentYear) {
+        db.document_counter[type] = { year: currentYear, last_number: 0 };
+      }
+      db.document_counter[type].last_number += 1;
+      const num = db.document_counter[type].last_number;
+      saveDB(db);
+
+      const padded = String(num).padStart(3, '0');
+      const prefix = type === 'SORT' ? 'SORT' : 'RP';
+      return `${prefix}-${currentYear}-${padded}`;
+    }
+
+    // Update Open Badge count in Sidebar
+    function updateOpenBadge() {
+      const db = loadDB();
+      const openSortir = (db.data_sortir || []).filter(d => d.status === 'OPEN').length;
+      const openRepair = (db.data_repair || []).filter(d => d.status === 'OPEN').length;
+      const total = openSortir + openRepair;
+      const badge = document.getElementById('badge-open-count');
+      if (badge) {
+        badge.textContent = total;
+        badge.style.display = total > 0 ? 'inline-block' : 'none';
+      }
+    }
+
+    /* =====================================================================
+       2. ROUTER & PAGE NAVIGATION
+       ===================================================================== */
+    window.addEventListener('hashchange', handleRoute);
+    window.addEventListener('DOMContentLoaded', () => {
+      // Auto-clean sample parts once if not yet cleared
+      if (!localStorage.getItem('MWT_PARTS_CLEARED_V1')) {
+        const db = loadDB();
+        db.master_part = [];
+        saveDB(db);
+        localStorage.setItem('MWT_PARTS_CLEARED_V1', 'true');
+      }
+
+      // Start clock
+      setInterval(() => {
+        const now = new Date();
+        const clockEl = document.getElementById('live-clock');
+        if (clockEl) clockEl.textContent = now.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('id-ID');
+      }, 1000);
+
+      updateOpenBadge();
+      handleRoute();
+    });
+
+    function handleRoute() {
+      const hash = location.hash || '#/dashboard';
+      const page = hash.replace('#/', '').split('?')[0];
+
+      // Update sidebar active link
+      document.querySelectorAll('.sidebar-menu a').forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === hash || a.dataset.page === page);
+      });
+
+      const titleMap = {
+        'dashboard': 'Dashboard Monitoring QC & Rework',
+        'sortir-form': 'Formulir Digital Hasil Sortir',
+        'repair-form': 'Formulir Digital Hasil Repair',
+        'open-queue': 'Antrean Dokumen Status OPEN',
+        'history': 'Riwayat Seluruh Dokumen QC',
+        'parts': 'Master Database Part & Komponen',
+        'stats-sortir': 'Statistik & Analisis Frekuensi Sortir',
+        'stats-repair': 'Statistik & Analisis Frekuensi Repair',
+        'settings': 'Pengaturan Sistem & Backup Database'
+      };
+
+      const titleEl = document.getElementById('page-header-title');
+      if (titleEl) titleEl.textContent = titleMap[page] || 'QC Monitoring System';
+
+      const container = document.getElementById('page-content');
+      switch (page) {
+        case 'dashboard': renderDashboard(container); break;
+        case 'sortir-form': renderSortirForm(container); break;
+        case 'repair-form': renderRepairForm(container); break;
+        case 'open-queue': renderOpenQueue(container); break;
+        case 'history': renderHistory(container); break;
+        case 'parts': renderParts(container); break;
+        case 'stats-sortir': renderStatsSortir(container); break;
+        case 'stats-repair': renderStatsRepair(container); break;
+        case 'settings': renderSettings(container); break;
+        default: renderDashboard(container);
+      }
+    }
+
+    /* =====================================================================
+       3. PAGE: DASHBOARD
+       ===================================================================== */
+    function renderDashboard(container) {
+      const db = loadDB();
+      const sortirList = db.data_sortir || [];
+      const repairList = db.data_repair || [];
+
+      const totalSortir = sortirList.length;
+      const totalRepair = repairList.length;
+
+      let holdTotal = 0, okTotal = 0, ngTotal = 0, openTotal = 0, closedTotal = 0;
+      sortirList.concat(repairList).forEach(d => {
+        holdTotal += (parseInt(d.qty_hold) || 0);
+        okTotal += (parseInt(d.qty_ok) || 0);
+        ngTotal += (parseInt(d.qty_ng) || 0);
+        if (d.status === 'OPEN') openTotal++;
+        if (d.status === 'CLOSED') closedTotal++;
+      });
+
+      // Merge and sort for recent activity table
+      const allActivities = [
+        ...sortirList.map(s => ({ ...s, activity_type: 'SORTIR' })),
+        ...repairList.map(r => ({ ...r, activity_type: 'REPAIR' }))
+      ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      container.innerHTML = `
+        <!-- STATS CARDS -->
+        <div class="stats-grid">
+          <div class="stat-card sortir">
+            <span class="stat-label">Frekuensi Sortir</span>
+            <span class="stat-val">${totalSortir}</span>
+            <span class="stat-sub">Total Dokumen Sortir</span>
+          </div>
+          <div class="stat-card repair">
+            <span class="stat-label">Frekuensi Repair</span>
+            <span class="stat-val">${totalRepair}</span>
+            <span class="stat-sub">Total Dokumen Repair</span>
+          </div>
+          <div class="stat-card hold">
+            <span class="stat-label">Total Qty Hold</span>
+            <span class="stat-val">${holdTotal.toLocaleString()}</span>
+            <span class="stat-sub">Pcs Barang Diperiksa</span>
+          </div>
+          <div class="stat-card ok">
+            <span class="stat-label">Total Qty OK</span>
+            <span class="stat-val" style="color: var(--green-status);">${okTotal.toLocaleString()}</span>
+            <span class="stat-sub">Pcs Lolos Standar</span>
+          </div>
+          <div class="stat-card ng">
+            <span class="stat-label">Total Qty NG</span>
+            <span class="stat-val" style="color: var(--red);">${ngTotal.toLocaleString()}</span>
+            <span class="stat-sub">Pcs Rusak / Reject</span>
+          </div>
+          <div class="stat-card open">
+            <span class="stat-label">Aktivitas OPEN</span>
+            <span class="stat-val" style="color: #D97706;">${openTotal}</span>
+            <span class="stat-sub">Perlu Tindak Lanjut</span>
+          </div>
+          <div class="stat-card closed">
+            <span class="stat-label">Aktivitas CLOSED</span>
+            <span class="stat-val" style="color: var(--green-status);">${closedTotal}</span>
+            <span class="stat-sub">Selesai 100%</span>
+          </div>
+        </div>
+
+        <!-- CHARTS SECTION -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;">
+          <div class="card" style="margin-bottom:0;">
+            <div class="card-title">
+              <span>Perbandingan Frekuensi Sortir & Repair (${new Date().getFullYear()})</span>
+            </div>
+            <div style="height: 240px; position: relative;">
+              <canvas id="dashboard-bar-chart"></canvas>
+            </div>
+          </div>
+          <div class="card" style="margin-bottom:0;">
+            <div class="card-title">
+              <span>Rasio Status Dokumen</span>
+            </div>
+            <div style="height: 240px; position: relative;">
+              <canvas id="dashboard-pie-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- RECENT ACTIVITIES TABLE -->
+        <div class="card">
+          <div class="card-title">
+            <span>Aktivitas Terbaru QC Sortir & Repair</span>
+            <a href="#/history" class="btn btn-outline btn-sm">Lihat Semua Riwayat &rarr;</a>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>No Dokumen</th>
+                  <th>Tanggal</th>
+                  <th>Jenis</th>
+                  <th>Part Name</th>
+                  <th>Part No</th>
+                  <th style="text-align:right;">Qty Hold</th>
+                  <th style="text-align:right;">Qty OK</th>
+                  <th style="text-align:right;">Qty NG</th>
+                  <th style="text-align:right;">Qty Open</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${allActivities.length === 0 ? `<tr><td colspan="11" style="text-align:center; padding: 25px; color:#888;">Belum ada data aktivitas. Silakan buat Form Sortir atau Repair.</td></tr>` : ''}
+                ${allActivities.slice(0, 8).map(item => `
+                  <tr>
+                    <td><strong>${item.doc_no}</strong></td>
+                    <td>${item.date}</td>
+                    <td><span class="badge-type ${item.activity_type}">${item.activity_type}</span></td>
+                    <td><strong>${item.part_name || '-'}</strong></td>
+                    <td style="color:#64748B;">${item.part_no || '-'}</td>
+                    <td style="text-align:right; font-weight:bold;">${item.qty_hold}</td>
+                    <td style="text-align:right; color:var(--green-status); font-weight:bold;">${item.qty_ok}</td>
+                    <td style="text-align:right; color:var(--red); font-weight:bold;">${item.qty_ng}</td>
+                    <td style="text-align:right; color:#D97706; font-weight:bold;">${item.qty_open}</td>
+                    <td><span class="badge-status ${item.status}">${item.status}</span></td>
+                    <td>
+                      <button class="btn btn-dark btn-sm" onclick="showDetailModal('${item.activity_type}', ${item.id})">🔍 Detail</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      initDashboardCharts(sortirList, repairList, openTotal, closedTotal);
+    }
+
+    function initDashboardCharts(sortirList, repairList, openTotal, closedTotal) {
+      if (typeof Chart === 'undefined') return;
+
+      const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+      const currentYear = new Date().getFullYear();
+
+      const sortirCounts = new Array(12).fill(0);
+      const repairCounts = new Array(12).fill(0);
+
+      sortirList.forEach(item => {
+        if (!item.date) return;
+        const d = new Date(item.date);
+        if (d.getFullYear() === currentYear) {
+          sortirCounts[d.getMonth()]++;
+        }
+      });
+
+      repairList.forEach(item => {
+        if (!item.date) return;
+        const d = new Date(item.date);
+        if (d.getFullYear() === currentYear) {
+          repairCounts[d.getMonth()]++;
+        }
+      });
+
+      const barCtx = document.getElementById('dashboard-bar-chart');
+      if (barCtx) {
+        new Chart(barCtx, {
+          type: 'bar',
+          data: {
+            labels: months,
+            datasets: [
+              { label: 'Frekuensi Sortir', data: sortirCounts, backgroundColor: '#0B5138', borderRadius: 4 },
+              { label: 'Frekuensi Repair', data: repairCounts, backgroundColor: '#00B889', borderRadius: 4 }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+          }
+        });
+      }
+
+      const pieCtx = document.getElementById('dashboard-pie-chart');
+      if (pieCtx) {
+        new Chart(pieCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Status OPEN', 'Status CLOSED'],
+            datasets: [{
+              data: [openTotal, closedTotal],
+              backgroundColor: ['#FFB000', '#16A34A'],
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom' }
+            }
+          }
+        });
+      }
+    }
+
+    /* =====================================================================
+       4. PAGE: FORM HASIL SORTIR
+       ===================================================================== */
+    function renderSortirForm(container) {
+      const db = loadDB();
+      const parts = db.master_part || [];
+      const today = new Date().toISOString().split('T')[0];
+
+      const nextNum = (db.document_counter?.SORT?.last_number || 0) + 1;
+      const previewDocNo = `SORT-${new Date().getFullYear()}-${String(nextNum).padStart(3, '0')}`;
+
+      container.innerHTML = `
+        <div class="card">
+          <div class="card-title">
+            <span>Formulir Hasil Sortir Digital</span>
+            <span style="font-size:0.85rem; color:#64748B;">No Dokumen: <strong>${previewDocNo}</strong></span>
+          </div>
+
+          <form id="form-sortir" onsubmit="handleSaveSortir(event)">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label required">No Dokumen</label>
+                <input type="text" id="sortir-doc-no" class="form-control" value="${previewDocNo}" readonly />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Day / Date</label>
+                <input type="date" id="sortir-date" class="form-control" value="${today}" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Klasifikasi Sortir</label>
+                <select id="sortir-classification" class="form-control" required>
+                  <option value="">-- Pilih Klasifikasi --</option>
+                  <option value="Sortir Temuan Problem">1. Sortir Temuan Problem</option>
+                  <option value="Cek Output">2. Cek Output</option>
+                  <option value="MP OJT">3. MP OJT</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Part Name (Searchable)</label>
+                <div class="search-select-wrapper">
+                  <input type="text" id="sortir-part-search" class="form-control" placeholder="Ketik nama part..." autocomplete="off" required oninput="filterPartDropdown('sortir')" onfocus="showPartDropdown('sortir')" />
+                  <input type="hidden" id="sortir-part-id" />
+                  <div class="search-select-dropdown" id="sortir-part-dropdown">
+                    ${parts.map(p => `
+                      <div class="dropdown-item" onclick="selectPart('sortir', ${p.id}, '${escapeHtml(p.part_name)}', '${escapeHtml(p.part_no)}')">
+                        <strong>${escapeHtml(p.part_name)}</strong>
+                        <span class="pno">${escapeHtml(p.part_no)}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Part No (Otomatis)</label>
+                <input type="text" id="sortir-part-no" class="form-control" placeholder="Otomatis terisi..." readonly required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Subcount / Divisi</label>
+                <input type="text" id="sortir-subcount" class="form-control" placeholder="Contoh: Stamping Div. 2 / Vendor A" required />
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label required">Masalah / Defect</label>
+                <input type="text" id="sortir-defect" class="form-control" placeholder="Jelaskan detail masalah atau temuan cacat..." required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Qty Hold (Total Diperiksa)</label>
+                <input type="number" id="sortir-qty-hold" class="form-control" min="1" placeholder="Masukkan total qty..." required oninput="calcSortirOpen()" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Qty OK (Pemeriksaan Awal)</label>
+                <input type="number" id="sortir-qty-ok" class="form-control" min="0" value="0" oninput="calcSortirOpen()" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Qty NG (Pemeriksaan Awal)</label>
+                <input type="number" id="sortir-qty-ng" class="form-control" min="0" value="0" oninput="calcSortirOpen()" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Qty Open (Sisa Belum Diperiksa)</label>
+                <input type="number" id="sortir-qty-open" class="form-control" value="0" readonly />
+              </div>
+
+              <div class="form-group full-width">
+                <div class="form-calc-box">
+                  <div class="calc-item"><span class="calc-title">QTY HOLD</span><span class="calc-val" id="disp-sortir-hold">0</span></div>
+                  <div class="calc-item"><span class="calc-title">QTY OK</span><span class="calc-val" style="color:var(--green-status);" id="disp-sortir-ok">0</span></div>
+                  <div class="calc-item"><span class="calc-title">QTY NG</span><span class="calc-val" style="color:var(--red);" id="disp-sortir-ng">0</span></div>
+                  <div class="calc-item"><span class="calc-title">QTY OPEN (SISA)</span><span class="calc-val val-open" id="disp-sortir-open">0</span></div>
+                </div>
+              </div>
+
+              <div class="form-group full-width" style="background:#F0FDF4; border:1px solid #86EFAC; border-radius:8px; padding:15px; margin-top:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <label class="form-label" style="font-size:0.9rem; color:var(--deep-green); margin:0;">
+                    🏷️ <strong>Nomor LOT (Bisa tambah 1 sampai 10+ LOT)</strong>
+                  </label>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="addDynamicField('sortir-lot-container', 'Nomor LOT (contoh: LOT-01 / LOT-A2)')">➕ Tambah Baris LOT</button>
+                </div>
+                <div id="sortir-lot-container" style="display:flex; flex-direction:column; gap:8px;">
+                  <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="text" class="form-control lot-input" placeholder="Nomor LOT 1 (contoh: LOT-2610A)" style="flex:1;" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group full-width" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:8px; padding:15px; margin-top:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <label class="form-label" style="font-size:0.9rem; color:var(--deep-green); margin:0;">
+                    👥 <strong>Nama-Nama Petugas yang Melakukan Sortir</strong>
+                  </label>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="addDynamicField('sortir-operators-container', 'Nama Petugas Sortir')">➕ Tambah Petugas Sortir</button>
+                </div>
+                <div id="sortir-operators-container" style="display:flex; flex-direction:column; gap:8px;">
+                  <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="text" class="form-control operator-input" placeholder="Nama Petugas Sortir 1" style="flex:1;" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Tanda Dilabel</label>
+                <input type="text" id="sortir-label" class="form-control" placeholder="Contoh: Tag Kuning QC / Solasi Hijau" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Metode Sortir</label>
+                <input type="text" id="sortir-method" class="form-control" placeholder="Contoh: Visual 100%, Jig Check, Pin Gauge" />
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label">Keterangan Tambahan</label>
+                <textarea id="sortir-description" class="form-control" rows="2" placeholder="Catatan khusus atau instruksi kerja sortir..."></textarea>
+              </div>
+
+              <!-- TTD DIGITAL MANUAL DRAW SECTION -->
+              <div class="form-group full-width" style="margin-top:10px; border-top:2px solid var(--mint-green); padding-top:15px;">
+                <label class="form-label" style="font-size:0.95rem; color:var(--deep-green); margin-bottom:10px;">
+                  ✍️ <strong>Tanda Tangan Digital (Gambar TTD Manual Langsung)</strong>
+                </label>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:15px;">
+                  <!-- TTD CHECKED -->
+                  <div class="ttd-box-wrapper">
+                    <span style="font-weight:700; font-size:0.82rem; color:var(--deep-green);">TTD CHECKED</span>
+                    <canvas id="canvas-ttd-sortir-checked" class="ttd-canvas" width="230" height="90"></canvas>
+                    <div class="ttd-actions">
+                      <button type="button" class="btn btn-outline btn-sm" onclick="clearSignatureCanvas('canvas-ttd-sortir-checked')">Hapus / Ulang</button>
+                    </div>
+                  </div>
+
+                  <!-- TTD CONTROLLED -->
+                  <div class="ttd-box-wrapper">
+                    <span style="font-weight:700; font-size:0.82rem; color:var(--deep-green);">TTD CONTROLLED</span>
+                    <canvas id="canvas-ttd-sortir-controlled" class="ttd-canvas" width="230" height="90"></canvas>
+                    <div class="ttd-actions">
+                      <button type="button" class="btn btn-outline btn-sm" onclick="clearSignatureCanvas('canvas-ttd-sortir-controlled')">Hapus / Ulang</button>
+                    </div>
+                  </div>
+
+                  <!-- TTD PIC SORTIR -->
+                  <div class="ttd-box-wrapper">
+                    <span style="font-weight:700; font-size:0.82rem; color:var(--deep-green);">TTD PIC SORTIR</span>
+                    <canvas id="canvas-ttd-sortir-pic" class="ttd-canvas" width="230" height="90"></canvas>
+                    <div class="ttd-actions">
+                      <button type="button" class="btn btn-outline btn-sm" onclick="clearSignatureCanvas('canvas-ttd-sortir-pic')">Hapus / Ulang</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">PIC Sortir (Pelaksana)</label>
+                <input type="text" id="sortir-pic" class="form-control" placeholder="Nama petugas sortir..." required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Checked By (Pemeriksa)</label>
+                <input type="text" id="sortir-checked" class="form-control" placeholder="Nama QC Inspector..." required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Controlled By (Penanggung Jawab)</label>
+                <input type="text" id="sortir-controlled" class="form-control" placeholder="Nama QC Leader / SPV..." required />
+              </div>
+            </div>
+
+            <div style="margin-top: 25px; display: flex; justify-content: flex-end; gap: 12px;">
+              <button type="reset" class="btn btn-outline" onclick="calcSortirOpen()">Reset Form</button>
+              <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-size: 0.95rem;">💾 Simpan Dokumen Sortir</button>
+            </div>
+          </form>
+        </div>
+      `;
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-select-wrapper')) {
+          document.querySelectorAll('.search-select-dropdown').forEach(d => d.classList.remove('show'));
+        }
+      });
+
+      // Inisialisasi Canvas TTD Digital Sortir
+      setTimeout(() => {
+        initSignatureCanvas('canvas-ttd-sortir-checked');
+        initSignatureCanvas('canvas-ttd-sortir-controlled');
+        initSignatureCanvas('canvas-ttd-sortir-pic');
+      }, 50);
+    }
+
+    function calcSortirOpen() {
+      const hold = parseInt(document.getElementById('sortir-qty-hold')?.value) || 0;
+      const ok = parseInt(document.getElementById('sortir-qty-ok')?.value) || 0;
+      const ng = parseInt(document.getElementById('sortir-qty-ng')?.value) || 0;
+      const open = Math.max(0, hold - ok - ng);
+
+      if (document.getElementById('sortir-qty-open')) document.getElementById('sortir-qty-open').value = open;
+      if (document.getElementById('disp-sortir-hold')) document.getElementById('disp-sortir-hold').textContent = hold;
+      if (document.getElementById('disp-sortir-ok')) document.getElementById('disp-sortir-ok').textContent = ok;
+      if (document.getElementById('disp-sortir-ng')) document.getElementById('disp-sortir-ng').textContent = ng;
+      if (document.getElementById('disp-sortir-open')) document.getElementById('disp-sortir-open').textContent = open;
+    }
+
+    function handleSaveSortir(e) {
+      e.preventDefault();
+      const hold = parseInt(document.getElementById('sortir-qty-hold').value) || 0;
+      const ok = parseInt(document.getElementById('sortir-qty-ok').value) || 0;
+      const ng = parseInt(document.getElementById('sortir-qty-ng').value) || 0;
+
+      if (hold <= 0) {
+        alert("Peringatan: Qty Hold harus lebih besar dari 0!");
+        return;
+      }
+      if (ok + ng > hold) {
+        alert(`Peringatan: Jumlah Qty OK (${ok}) + Qty NG (${ng}) = ${ok + ng} melebihi Qty Hold (${hold})!`);
+        return;
+      }
+
+      const open = hold - ok - ng;
+      const status = open === 0 ? 'CLOSED' : 'OPEN';
+      const actualDocNo = generateDocNumber('SORT');
+
+      const lots = getDynamicValues('sortir-lot-container');
+      const operators = getDynamicValues('sortir-operators-container');
+      const primaryPic = document.getElementById('sortir-pic').value || (operators.length > 0 ? operators[0] : '-');
+
+      // Ambil TTD Digital dari Canvas
+      const sigChecked = getSignatureDataURL('canvas-ttd-sortir-checked');
+      const sigControlled = getSignatureDataURL('canvas-ttd-sortir-controlled');
+      const sigPic = getSignatureDataURL('canvas-ttd-sortir-pic');
+
+      const newRecord = {
+        id: Date.now(),
+        doc_no: actualDocNo,
+        date: document.getElementById('sortir-date').value,
+        classification: document.getElementById('sortir-classification').value,
+        part_id: parseInt(document.getElementById('sortir-part-id').value) || 0,
+        part_name: document.getElementById('sortir-part-search').value,
+        part_no: document.getElementById('sortir-part-no').value,
+        defect: document.getElementById('sortir-defect').value,
+        subcount: document.getElementById('sortir-subcount').value,
+        qty_hold: hold,
+        qty_ok: ok,
+        qty_ng: ng,
+        qty_open: open,
+        label: document.getElementById('sortir-label').value || '-',
+        description: document.getElementById('sortir-description').value || '-',
+        method: document.getElementById('sortir-method').value || '-',
+        lots: lots,
+        operators: operators,
+        pic_sortir: primaryPic,
+        checked_by: document.getElementById('sortir-checked').value,
+        controlled_by: document.getElementById('sortir-controlled').value,
+        sig_checked: sigChecked,
+        sig_controlled: sigControlled,
+        sig_pic: sigPic,
+        status: status
+      };
+
+      const db = loadDB();
+      if (!db.data_sortir) db.data_sortir = [];
+      db.data_sortir.unshift(newRecord);
+
+      if (!db.history_sortir) db.history_sortir = [];
+      db.history_sortir.push({
+        id: Date.now() + 1,
+        sortir_id: newRecord.id,
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+        added_ok: ok,
+        added_ng: ng,
+        pic: newRecord.pic_sortir,
+        note: "Pembuatan Dokumen Awal (Qty Hold: " + hold + ")"
+      });
+
+      saveDB(db);
+      alert(`✅ Berhasil! Dokumen Sortir tersimpan dengan nomor resmi: ${actualDocNo}\nStatus: ${status} (Sisa Qty Open: ${open})`);
+      location.hash = '#/open-queue';
+    }
+
+    /* =====================================================================
+       5. PAGE: FORM HASIL REPAIR
+       ===================================================================== */
+    function renderRepairForm(container) {
+      const db = loadDB();
+      const parts = db.master_part || [];
+      const today = new Date().toISOString().split('T')[0];
+
+      const nextNum = (db.document_counter?.REPAIR?.last_number || 0) + 1;
+      const previewDocNo = `RP-${new Date().getFullYear()}-${String(nextNum).padStart(3, '0')}`;
+
+      container.innerHTML = `
+        <div class="card">
+          <div class="card-title">
+            <span>Formulir Hasil Repair Digital</span>
+            <span style="font-size:0.85rem; color:#64748B;">No Dokumen: <strong>${previewDocNo}</strong></span>
+          </div>
+
+          <form id="form-repair" onsubmit="handleSaveRepair(event)">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label required">No Dokumen</label>
+                <input type="text" id="repair-doc-no" class="form-control" value="${previewDocNo}" readonly />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Day / Date</label>
+                <input type="date" id="repair-date" class="form-control" value="${today}" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Part Name (Searchable)</label>
+                <div class="search-select-wrapper">
+                  <input type="text" id="repair-part-search" class="form-control" placeholder="Ketik nama part..." autocomplete="off" required oninput="filterPartDropdown('repair')" onfocus="showPartDropdown('repair')" />
+                  <input type="hidden" id="repair-part-id" />
+                  <div class="search-select-dropdown" id="repair-part-dropdown">
+                    ${parts.map(p => `
+                      <div class="dropdown-item" onclick="selectPart('repair', ${p.id}, '${escapeHtml(p.part_name)}', '${escapeHtml(p.part_no)}')">
+                        <strong>${escapeHtml(p.part_name)}</strong>
+                        <span class="pno">${escapeHtml(p.part_no)}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Part No (Otomatis)</label>
+                <input type="text" id="repair-part-no" class="form-control" placeholder="Otomatis terisi..." readonly required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Subcount / Divisi</label>
+                <input type="text" id="repair-subcount" class="form-control" placeholder="Contoh: Machining Line A / Welding" required />
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label required">Masalah / Defect Temuan</label>
+                <input type="text" id="repair-defect" class="form-control" placeholder="Jelaskan jenis defect produk yang perlu direpair..." required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Qty Hold (Total Repair)</label>
+                <input type="number" id="repair-qty-hold" class="form-control" min="1" placeholder="Masukkan total qty..." required oninput="calcRepairOpen()" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Qty OK (Repair Awal)</label>
+                <input type="number" id="repair-qty-ok" class="form-control" min="0" value="0" oninput="calcRepairOpen()" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Qty NG (Repair Awal)</label>
+                <input type="number" id="repair-qty-ng" class="form-control" min="0" value="0" oninput="calcRepairOpen()" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Qty Open (Sisa Repair)</label>
+                <input type="number" id="repair-qty-open" class="form-control" value="0" readonly />
+              </div>
+
+              <div class="form-group full-width">
+                <div class="form-calc-box">
+                  <div class="calc-item"><span class="calc-title">QTY REPAIR (HOLD)</span><span class="calc-val" id="disp-repair-hold">0</span></div>
+                  <div class="calc-item"><span class="calc-title">QTY OK</span><span class="calc-val" style="color:var(--green-status);" id="disp-repair-ok">0</span></div>
+                  <div class="calc-item"><span class="calc-title">QTY NG</span><span class="calc-val" style="color:var(--red);" id="disp-repair-ng">0</span></div>
+                  <div class="calc-item"><span class="calc-title">QTY OPEN (SISA)</span><span class="calc-val val-open" id="disp-repair-open">0</span></div>
+                </div>
+              </div>
+
+              <div class="form-group full-width" style="background:#F0FDF4; border:1px solid #86EFAC; border-radius:8px; padding:15px; margin-top:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <label class="form-label" style="font-size:0.9rem; color:var(--deep-green); margin:0;">
+                    🏷️ <strong>Nomor LOT (Bisa tambah 1 sampai 10+ LOT)</strong>
+                  </label>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="addDynamicField('repair-lot-container', 'Nomor LOT (contoh: LOT-01 / LOT-B3)')">➕ Tambah Baris LOT</button>
+                </div>
+                <div id="repair-lot-container" style="display:flex; flex-direction:column; gap:8px;">
+                  <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="text" class="form-control lot-input" placeholder="Nomor LOT 1 (contoh: LOT-2610A)" style="flex:1;" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group full-width" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:8px; padding:15px; margin-top:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <label class="form-label" style="font-size:0.9rem; color:var(--deep-green); margin:0;">
+                    👥 <strong>Nama-Nama Petugas yang Melakukan Repair</strong>
+                  </label>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="addDynamicField('repair-operators-container', 'Nama Petugas Repair')">➕ Tambah Petugas Repair</button>
+                </div>
+                <div id="repair-operators-container" style="display:flex; flex-direction:column; gap:8px;">
+                  <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="text" class="form-control operator-input" placeholder="Nama Petugas Repair 1" style="flex:1;" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label required">Metode Repair</label>
+                <input type="text" id="repair-method" class="form-control" placeholder="Contoh: Buffing, Re-tapping M8, Re-welding TIG" required />
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label">Keterangan</label>
+                <textarea id="repair-description" class="form-control" rows="2" placeholder="Catatan proses repair atau instruksi khusus..."></textarea>
+              </div>
+
+              <!-- TTD DIGITAL MANUAL DRAW SECTION -->
+              <div class="form-group full-width" style="margin-top:10px; border-top:2px solid var(--mint-green); padding-top:15px;">
+                <label class="form-label" style="font-size:0.95rem; color:var(--deep-green); margin-bottom:10px;">
+                  ✍️ <strong>Tanda Tangan Digital (Gambar TTD Manual Langsung)</strong>
+                </label>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:15px;">
+                  <!-- TTD CHECKED -->
+                  <div class="ttd-box-wrapper">
+                    <span style="font-weight:700; font-size:0.82rem; color:var(--deep-green);">TTD CHECKED</span>
+                    <canvas id="canvas-ttd-repair-checked" class="ttd-canvas" width="230" height="90"></canvas>
+                    <div class="ttd-actions">
+                      <button type="button" class="btn btn-outline btn-sm" onclick="clearSignatureCanvas('canvas-ttd-repair-checked')">Hapus / Ulang</button>
+                    </div>
+                  </div>
+
+                  <!-- TTD CONTROLLED -->
+                  <div class="ttd-box-wrapper">
+                    <span style="font-weight:700; font-size:0.82rem; color:var(--deep-green);">TTD CONTROLLED</span>
+                    <canvas id="canvas-ttd-repair-controlled" class="ttd-canvas" width="230" height="90"></canvas>
+                    <div class="ttd-actions">
+                      <button type="button" class="btn btn-outline btn-sm" onclick="clearSignatureCanvas('canvas-ttd-repair-controlled')">Hapus / Ulang</button>
+                    </div>
+                  </div>
+
+                  <!-- TTD PIC REPAIR -->
+                  <div class="ttd-box-wrapper">
+                    <span style="font-weight:700; font-size:0.82rem; color:var(--deep-green);">TTD PIC REPAIR</span>
+                    <canvas id="canvas-ttd-repair-pic" class="ttd-canvas" width="230" height="90"></canvas>
+                    <div class="ttd-actions">
+                      <button type="button" class="btn btn-outline btn-sm" onclick="clearSignatureCanvas('canvas-ttd-repair-pic')">Hapus / Ulang</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">PIC Repair (Operator)</label>
+                <input type="text" id="repair-pic" class="form-control" placeholder="Nama teknisi / operator repair..." required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Checked By (Pemeriksa)</label>
+                <input type="text" id="repair-checked" class="form-control" placeholder="Nama QC Inspector..." required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Controlled By (Penanggung Jawab)</label>
+                <input type="text" id="repair-controlled" class="form-control" placeholder="Nama QC Leader / SPV..." required />
+              </div>
+            </div>
+
+            <div style="margin-top: 25px; display: flex; justify-content: flex-end; gap: 12px;">
+              <button type="reset" class="btn btn-outline" onclick="calcRepairOpen()">Reset Form</button>
+              <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-size: 0.95rem;">💾 Simpan Dokumen Repair</button>
+            </div>
+          </form>
+        </div>
+      `;
+
+      // Inisialisasi Canvas TTD Digital Repair
+      setTimeout(() => {
+        initSignatureCanvas('canvas-ttd-repair-checked');
+        initSignatureCanvas('canvas-ttd-repair-controlled');
+        initSignatureCanvas('canvas-ttd-repair-pic');
+      }, 50);
+    }
+
+    function calcRepairOpen() {
+      const hold = parseInt(document.getElementById('repair-qty-hold')?.value) || 0;
+      const ok = parseInt(document.getElementById('repair-qty-ok')?.value) || 0;
+      const ng = parseInt(document.getElementById('repair-qty-ng')?.value) || 0;
+      const open = Math.max(0, hold - ok - ng);
+
+      if (document.getElementById('repair-qty-open')) document.getElementById('repair-qty-open').value = open;
+      if (document.getElementById('disp-repair-hold')) document.getElementById('disp-repair-hold').textContent = hold;
+      if (document.getElementById('disp-repair-ok')) document.getElementById('disp-repair-ok').textContent = ok;
+      if (document.getElementById('disp-repair-ng')) document.getElementById('disp-repair-ng').textContent = ng;
+      if (document.getElementById('disp-repair-open')) document.getElementById('disp-repair-open').textContent = open;
+    }
+
+    function handleSaveRepair(e) {
+      e.preventDefault();
+      const hold = parseInt(document.getElementById('repair-qty-hold').value) || 0;
+      const ok = parseInt(document.getElementById('repair-qty-ok').value) || 0;
+      const ng = parseInt(document.getElementById('repair-qty-ng').value) || 0;
+
+      if (hold <= 0) {
+        alert("Peringatan: Qty Hold harus lebih besar dari 0!");
+        return;
+      }
+      if (ok + ng > hold) {
+        alert(`Peringatan: Jumlah Qty OK (${ok}) + Qty NG (${ng}) = ${ok + ng} melebihi Qty Hold (${hold})!`);
+        return;
+      }
+
+      const open = hold - ok - ng;
+      const status = open === 0 ? 'CLOSED' : 'OPEN';
+      const actualDocNo = generateDocNumber('REPAIR');
+
+      const lots = getDynamicValues('repair-lot-container');
+      const operators = getDynamicValues('repair-operators-container');
+      const primaryPic = document.getElementById('repair-pic').value || (operators.length > 0 ? operators[0] : '-');
+
+      // Ambil TTD Digital dari Canvas
+      const sigChecked = getSignatureDataURL('canvas-ttd-repair-checked');
+      const sigControlled = getSignatureDataURL('canvas-ttd-repair-controlled');
+      const sigPic = getSignatureDataURL('canvas-ttd-repair-pic');
+
+      const newRecord = {
+        id: Date.now(),
+        doc_no: actualDocNo,
+        date: document.getElementById('repair-date').value,
+        part_id: parseInt(document.getElementById('repair-part-id').value) || 0,
+        part_name: document.getElementById('repair-part-search').value,
+        part_no: document.getElementById('repair-part-no').value,
+        defect: document.getElementById('repair-defect').value,
+        subcount: document.getElementById('repair-subcount').value,
+        qty_hold: hold,
+        qty_ok: ok,
+        qty_ng: ng,
+        qty_open: open,
+        description: document.getElementById('repair-description').value || '-',
+        method: document.getElementById('repair-method').value,
+        lots: lots,
+        operators: operators,
+        pic_repair: primaryPic,
+        checked_by: document.getElementById('repair-checked').value,
+        controlled_by: document.getElementById('repair-controlled').value,
+        sig_checked: sigChecked,
+        sig_controlled: sigControlled,
+        sig_pic: sigPic,
+        status: status
+      };
+
+      const db = loadDB();
+      if (!db.data_repair) db.data_repair = [];
+      db.data_repair.unshift(newRecord);
+
+      if (!db.history_repair) db.history_repair = [];
+      db.history_repair.push({
+        id: Date.now() + 1,
+        repair_id: newRecord.id,
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+        added_ok: ok,
+        added_ng: ng,
+        pic: newRecord.pic_repair,
+        note: "Pembuatan Dokumen Awal Repair (Qty Hold: " + hold + ")"
+      });
+
+      saveDB(db);
+      alert(`✅ Berhasil! Dokumen Repair tersimpan dengan nomor resmi: ${actualDocNo}\nStatus: ${status} (Sisa Qty Open: ${open})`);
+      location.hash = '#/open-queue';
+    }
+
+    // TTD Canvas Drawing Logic
+    function initSignatureCanvas(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let isDrawing = false;
+      let lastX = 0;
+      let lastY = 0;
+
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+        const clientY = (e.touches && e.touches.length > 0) ? e.touches[0].clientY : e.clientY;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return {
+          x: (clientX - rect.left) * scaleX,
+          y: (clientY - rect.top) * scaleY
+        };
+      }
+
+      function startDraw(e) {
+        isDrawing = true;
+        const pos = getPos(e);
+        lastX = pos.x;
+        lastY = pos.y;
+        if (e.cancelable) e.preventDefault();
+      }
+
+      function draw(e) {
+        if (!isDrawing) return;
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        lastX = pos.x;
+        lastY = pos.y;
+        if (e.cancelable) e.preventDefault();
+      }
+
+      function stopDraw(e) {
+        if (isDrawing) {
+          isDrawing = false;
+          if (e && e.cancelable) e.preventDefault();
+        }
+      }
+
+      canvas.onmousedown = startDraw;
+      canvas.onmousemove = draw;
+      canvas.onmouseup = stopDraw;
+      canvas.onmouseleave = stopDraw;
+
+      canvas.ontouchstart = startDraw;
+      canvas.ontouchmove = draw;
+      canvas.ontouchend = stopDraw;
+      canvas.ontouchcancel = stopDraw;
+    }
+
+    function clearSignatureCanvas(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function getSignatureDataURL(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return null;
+      try {
+        const ctx = canvas.getContext('2d');
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const pixelBuffer = new Uint32Array(imgData.data.buffer);
+        const isBlank = !pixelBuffer.some(color => color !== 0);
+        return isBlank ? null : canvas.toDataURL('image/png');
+      } catch (err) {
+        console.error('Error getting canvas data', err);
+        return null;
+      }
+    }
+
+    // Dynamic Input Helpers for LOT and Operators
+    function addDynamicField(containerId, placeholderText) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const count = container.querySelectorAll('input').length + 1;
+      const div = document.createElement('div');
+      div.style.display = 'flex';
+      div.style.gap = '8px';
+      div.style.alignItems = 'center';
+      div.innerHTML = `
+        <input type="text" class="form-control ${containerId.includes('lot') ? 'lot-input' : 'operator-input'}" placeholder="${placeholderText} ${count}" style="flex:1;" />
+        <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()" style="padding:6px 10px;">✕ Hapus</button>
+      `;
+      container.appendChild(div);
+    }
+
+    function getDynamicValues(containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return [];
+      const inputs = container.querySelectorAll('input');
+      const vals = [];
+      inputs.forEach(inp => {
+        const v = inp.value.trim();
+        if (v) vals.push(v);
+      });
+      return vals;
+    }
+
+    function showPartDropdown(prefix) {
+      document.getElementById(`${prefix}-part-dropdown`).classList.add('show');
+    }
+
+    function filterPartDropdown(prefix) {
+      const q = (document.getElementById(`${prefix}-part-search`).value || '').toLowerCase();
+      const items = document.querySelectorAll(`#${prefix}-part-dropdown .dropdown-item`);
+      items.forEach(it => {
+        const text = it.textContent.toLowerCase();
+        it.style.display = text.includes(q) ? 'flex' : 'none';
+      });
+      document.getElementById(`${prefix}-part-dropdown`).classList.add('show');
+    }
+
+    function selectPart(prefix, id, name, no) {
+      document.getElementById(`${prefix}-part-search`).value = name;
+      document.getElementById(`${prefix}-part-id`).value = id;
+      document.getElementById(`${prefix}-part-no`).value = no;
+      document.getElementById(`${prefix}-part-dropdown`).classList.remove('show');
+    }
+
+    /* =====================================================================
+       6. PAGE: ANTREAN STATUS OPEN
+       ===================================================================== */
+    function renderOpenQueue(container) {
+      const db = loadDB();
+      const openSortir = (db.data_sortir || []).filter(d => d.status === 'OPEN').map(s => ({ ...s, activity_type: 'SORTIR' }));
+      const openRepair = (db.data_repair || []).filter(d => d.status === 'OPEN').map(r => ({ ...r, activity_type: 'REPAIR' }));
+      const allOpen = [...openSortir, ...openRepair].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      container.innerHTML = `
+        <div class="card">
+          <div class="card-title">
+            <span>Antrean Dokumen Status OPEN (${allOpen.length} Dokumen)</span>
+            <span style="font-size:0.8rem; font-weight:normal; color:#64748B;">Dokumen otomatis CLOSED jika Qty Open = 0</span>
+          </div>
+
+          <div class="filter-row">
+            <div class="search-box">
+              <input type="text" id="queue-search" class="form-control" placeholder="Cari Part Name atau No Dokumen..." oninput="filterQueueTable()" />
+            </div>
+            <div>
+              <select id="queue-filter-type" class="form-control" onchange="filterQueueTable()">
+                <option value="ALL">Semua Jenis (Sortir & Repair)</option>
+                <option value="SORTIR">Hanya Sortir</option>
+                <option value="REPAIR">Hanya Repair</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table" id="queue-table">
+              <thead>
+                <tr>
+                  <th>No Dokumen</th>
+                  <th>Tanggal</th>
+                  <th>Jenis</th>
+                  <th>Part Name</th>
+                  <th>Part No</th>
+                  <th style="text-align:right;">Qty Hold</th>
+                  <th style="text-align:right;">OK</th>
+                  <th style="text-align:right;">NG</th>
+                  <th style="text-align:right;">Qty Open</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${allOpen.length === 0 ? `
+                  <tr>
+                    <td colspan="11" style="text-align:center; padding: 35px; color:#15803D; font-weight:bold;">
+                      🎉 Tidak ada antrean dokumen berstatus OPEN. Semua pemeriksaan telah selesai (CLOSED).
+                    </td>
+                  </tr>
+                ` : ''}
+                ${allOpen.map(doc => `
+                  <tr data-type="${doc.activity_type}" data-text="${(doc.doc_no + ' ' + doc.part_name + ' ' + doc.part_no).toLowerCase()}">
+                    <td><strong>${doc.doc_no}</strong></td>
+                    <td>${doc.date}</td>
+                    <td><span class="badge-type ${doc.activity_type}">${doc.activity_type}</span></td>
+                    <td><strong>${doc.part_name}</strong></td>
+                    <td style="color:#64748B;">${doc.part_no}</td>
+                    <td style="text-align:right; font-weight:bold;">${doc.qty_hold}</td>
+                    <td style="text-align:right; color:var(--green-status); font-weight:bold;">${doc.qty_ok}</td>
+                    <td style="text-align:right; color:var(--red); font-weight:bold;">${doc.qty_ng}</td>
+                    <td style="text-align:right; color:#D97706; font-size:1.05rem; font-weight:800;">${doc.qty_open}</td>
+                    <td><span class="badge-status OPEN">OPEN</span></td>
+                    <td>
+                      <div style="display:flex; gap:6px;">
+                        <button class="btn btn-primary btn-sm" onclick="showUpdateModal('${doc.activity_type}', ${doc.id})">⚡ Update Progres</button>
+                        <button class="btn btn-dark btn-sm" onclick="showDetailModal('${doc.activity_type}', ${doc.id})">🔍 Detail</button>
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function filterQueueTable() {
+      const q = (document.getElementById('queue-search')?.value || '').toLowerCase();
+      const type = document.getElementById('queue-filter-type')?.value || 'ALL';
+      const rows = document.querySelectorAll('#queue-table tbody tr[data-text]');
+      rows.forEach(r => {
+        const matchesText = r.dataset.text.includes(q);
+        const matchesType = type === 'ALL' || r.dataset.type === type;
+        r.style.display = matchesText && matchesType ? '' : 'none';
+      });
+    }
+
+    /* =====================================================================
+       7. UPDATE PROGRES MODAL
+       ===================================================================== */
+    function showUpdateModal(type, docId) {
+      const db = loadDB();
+      const list = type === 'SORTIR' ? db.data_sortir : db.data_repair;
+      const doc = list.find(d => d.id === docId);
+      if (!doc) return alert("Dokumen tidak ditemukan!");
+
+      if (doc.status === 'CLOSED') {
+        return alert("Dokumen ini telah CLOSED dan tidak dapat diupdate lagi.");
+      }
+
+      const modalBox = document.getElementById('modal-card-box');
+      modalBox.className = 'modal-card';
+
+      document.getElementById('modal-title').textContent = `Update Progres Pemeriksaan: ${doc.doc_no}`;
+      document.getElementById('modal-body-content').innerHTML = `
+        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:12px; margin-bottom:15px; font-size:0.85rem;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+            <div><strong>Part Name:</strong> ${doc.part_name}</div>
+            <div><strong>Part No:</strong> ${doc.part_no}</div>
+            <div><strong>Total Qty Hold:</strong> ${doc.qty_hold} pcs</div>
+            <div><strong>Sisa Qty Open Saat Ini:</strong> <span style="color:#D97706; font-weight:800; font-size:1rem;">${doc.qty_open} pcs</span></div>
+            <div><strong>Sudah OK:</strong> <span style="color:var(--green-status); font-weight:bold;">${doc.qty_ok}</span></div>
+            <div><strong>Sudah NG:</strong> <span style="color:var(--red); font-weight:bold;">${doc.qty_ng}</span></div>
+          </div>
+        </div>
+
+        <form id="form-update-progress" onsubmit="handleExecuteUpdate(event, '${type}', ${doc.id})">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label required">Tambahan Qty OK</label>
+              <input type="number" id="update-added-ok" class="form-control" min="0" max="${doc.qty_open}" value="0" required oninput="calcRemainingUpdate(${doc.qty_open})" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required">Tambahan Qty NG</label>
+              <input type="number" id="update-added-ng" class="form-control" min="0" max="${doc.qty_open}" value="0" required oninput="calcRemainingUpdate(${doc.qty_open})" />
+            </div>
+
+            <div class="form-group full-width">
+              <div style="background:#FEF3C7; border:1px solid #FCD34D; border-radius:6px; padding:10px; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center;">
+                <span>Total Input Tambahan: <strong id="disp-total-added">0</strong> pcs</span>
+                <span>Proyeksi Sisa Qty Open: <strong id="disp-proj-open" style="color:#B45309; font-size:1.1rem;">${doc.qty_open}</strong> pcs</span>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label required">Nama PIC Pemeriksa</label>
+              <input type="text" id="update-pic" class="form-control" placeholder="Nama operator yang melakukan update..." required />
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label">Catatan Update / Keterangan Temuan</label>
+              <textarea id="update-note" class="form-control" rows="2" placeholder="Catatan shift, jenis cacat tambahan, dsb..."></textarea>
+            </div>
+          </div>
+
+          <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" class="btn btn-outline" onclick="closeModal()">Batal</button>
+            <button type="submit" class="btn btn-primary">💾 Simpan Update Progres</button>
+          </div>
+        </form>
+      `;
+
+      document.getElementById('modal-footer-content').innerHTML = '';
+      openModal();
+    }
+
+    function calcRemainingUpdate(currentOpen) {
+      const addedOk = parseInt(document.getElementById('update-added-ok')?.value) || 0;
+      const addedNg = parseInt(document.getElementById('update-added-ng')?.value) || 0;
+      const totalAdded = addedOk + addedNg;
+      const remaining = currentOpen - totalAdded;
+
+      if (document.getElementById('disp-total-added')) document.getElementById('disp-total-added').textContent = totalAdded;
+      const projEl = document.getElementById('disp-proj-open');
+      if (projEl) {
+        projEl.textContent = remaining;
+        projEl.style.color = remaining < 0 ? 'var(--red)' : '#B45309';
+      }
+    }
+
+    function handleExecuteUpdate(e, type, docId) {
+      e.preventDefault();
+      const addedOk = parseInt(document.getElementById('update-added-ok').value) || 0;
+      const addedNg = parseInt(document.getElementById('update-added-ng').value) || 0;
+      const pic = document.getElementById('update-pic').value;
+      const note = document.getElementById('update-note').value;
+
+      if (addedOk === 0 && addedNg === 0) {
+        alert("Peringatan: Tambahan Qty OK dan Qty NG tidak boleh keduanya 0!");
+        return;
+      }
+
+      const db = loadDB();
+      const list = type === 'SORTIR' ? db.data_sortir : db.data_repair;
+      const doc = list.find(d => d.id === docId);
+      if (!doc) return;
+
+      const totalAdded = addedOk + addedNg;
+      if (totalAdded > doc.qty_open) {
+        alert(`Gagal: Total tambahan OK + NG (${totalAdded}) melebihi sisa Qty Open yang tersedia (${doc.qty_open})!`);
+        return;
+      }
+
+      // ACCUMULATE
+      doc.qty_ok = (parseInt(doc.qty_ok) || 0) + addedOk;
+      doc.qty_ng = (parseInt(doc.qty_ng) || 0) + addedNg;
+      doc.qty_open = doc.qty_hold - doc.qty_ok - doc.qty_ng;
+
+      if (doc.qty_open === 0) {
+        doc.status = 'CLOSED';
+      }
+
+      // RECORD AUDIT HISTORY
+      const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
+      if (type === 'SORTIR') {
+        if (!db.history_sortir) db.history_sortir = [];
+        db.history_sortir.push({
+          id: Date.now(),
+          sortir_id: doc.id,
+          timestamp: nowStr,
+          added_ok: addedOk,
+          added_ng: addedNg,
+          pic: pic,
+          note: note || '-'
+        });
+      } else {
+        if (!db.history_repair) db.history_repair = [];
+        db.history_repair.push({
+          id: Date.now(),
+          repair_id: doc.id,
+          timestamp: nowStr,
+          added_ok: addedOk,
+          added_ng: addedNg,
+          pic: pic,
+          note: note || '-'
+        });
+      }
+
+      saveDB(db);
+      closeModal();
+      alert(`✅ Berhasil! Progres diperbarui.\nTotal OK: ${doc.qty_ok}\nTotal NG: ${doc.qty_ng}\nSisa Qty Open: ${doc.qty_open}\nStatus: ${doc.status}`);
+      handleRoute();
+    }
+
+    /* =====================================================================
+       8. PAGE: RIWAYAT DOKUMEN & DETAIL
+       ===================================================================== */
+    function renderHistory(container) {
+      const db = loadDB();
+      const allDocs = [
+        ...(db.data_sortir || []).map(s => ({ ...s, activity_type: 'SORTIR' })),
+        ...(db.data_repair || []).map(r => ({ ...r, activity_type: 'REPAIR' }))
+      ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      const years = Array.from(new Set(allDocs.map(d => d.date?.substring(0, 4)).filter(Boolean))).sort().reverse();
+      if (!years.includes("2026")) years.unshift("2026");
+
+      container.innerHTML = `
+        <div class="card">
+          <div class="card-title">
+            <span>Riwayat Seluruh Dokumen QC Sortir & Repair</span>
+            <div>
+              <button class="btn btn-outline btn-sm" onclick="exportDatabaseFile()">📥 Export Data</button>
+            </div>
+          </div>
+
+          <div class="filter-row">
+            <div class="search-box">
+              <input type="text" id="hist-search" class="form-control" placeholder="Cari No Dokumen / Part Name / Masalah..." oninput="filterHistoryTable()" />
+            </div>
+            <div>
+              <select id="hist-filter-type" class="form-control" onchange="filterHistoryTable()">
+                <option value="ALL">Semua Jenis</option>
+                <option value="SORTIR">Sortir</option>
+                <option value="REPAIR">Repair</option>
+              </select>
+            </div>
+            <div>
+              <select id="hist-filter-status" class="form-control" onchange="filterHistoryTable()">
+                <option value="ALL">Semua Status</option>
+                <option value="OPEN">Hanya OPEN</option>
+                <option value="CLOSED">Hanya CLOSED</option>
+              </select>
+            </div>
+            <div>
+              <select id="hist-filter-year" class="form-control" onchange="filterHistoryTable()">
+                <option value="ALL">Semua Tahun</option>
+                ${years.map(y => `<option value="${y}">${y}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table" id="history-table">
+              <thead>
+                <tr>
+                  <th>No Dokumen</th>
+                  <th>Tanggal</th>
+                  <th>Jenis</th>
+                  <th>Part Name</th>
+                  <th>Part No</th>
+                  <th style="text-align:right;">Hold</th>
+                  <th style="text-align:right;">OK</th>
+                  <th style="text-align:right;">NG</th>
+                  <th style="text-align:right;">Open</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${allDocs.length === 0 ? `<tr><td colspan="11" style="text-align:center; padding: 25px; color:#888;">Belum ada riwayat dokumen.</td></tr>` : ''}
+                ${allDocs.map(doc => `
+                  <tr data-type="${doc.activity_type}" data-status="${doc.status}" data-year="${doc.date ? doc.date.substring(0,4) : ''}" data-text="${(doc.doc_no + ' ' + doc.part_name + ' ' + doc.part_no + ' ' + doc.defect).toLowerCase()}">
+                    <td><strong>${doc.doc_no}</strong></td>
+                    <td>${doc.date}</td>
+                    <td><span class="badge-type ${doc.activity_type}">${doc.activity_type}</span></td>
+                    <td><strong>${doc.part_name}</strong></td>
+                    <td style="color:#64748B;">${doc.part_no}</td>
+                    <td style="text-align:right; font-weight:bold;">${doc.qty_hold}</td>
+                    <td style="text-align:right; color:var(--green-status); font-weight:bold;">${doc.qty_ok}</td>
+                    <td style="text-align:right; color:var(--red); font-weight:bold;">${doc.qty_ng}</td>
+                    <td style="text-align:right; color:#D97706; font-weight:bold;">${doc.qty_open}</td>
+                    <td><span class="badge-status ${doc.status}">${doc.status}</span></td>
+                    <td>
+                      <div style="display:flex; gap:5px;">
+                        <button class="btn btn-dark btn-sm" onclick="showDetailModal('${doc.activity_type}', ${doc.id})">Detail</button>
+                        <button class="btn btn-outline btn-sm" onclick="previewPDF('${doc.activity_type}', ${doc.id})">📄 PDF</button>
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function filterHistoryTable() {
+      const q = (document.getElementById('hist-search')?.value || '').toLowerCase();
+      const type = document.getElementById('hist-filter-type')?.value || 'ALL';
+      const status = document.getElementById('hist-filter-status')?.value || 'ALL';
+      const year = document.getElementById('hist-filter-year')?.value || 'ALL';
+
+      const rows = document.querySelectorAll('#history-table tbody tr[data-text]');
+      rows.forEach(r => {
+        const matchesText = r.dataset.text.includes(q);
+        const matchesType = type === 'ALL' || r.dataset.type === type;
+        const matchesStatus = status === 'ALL' || r.dataset.status === status;
+        const matchesYear = year === 'ALL' || r.dataset.year === year;
+        r.style.display = matchesText && matchesType && matchesStatus && matchesYear ? '' : 'none';
+      });
+    }
+
+    function showDetailModal(type, docId) {
+      const db = loadDB();
+      const doc = (type === 'SORTIR' ? db.data_sortir : db.data_repair).find(d => d.id === docId);
+      if (!doc) return;
+
+      const historyEntries = (type === 'SORTIR' ? db.history_sortir : db.history_repair)
+        .filter(h => (type === 'SORTIR' ? h.sortir_id === doc.id : h.repair_id === doc.id))
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+      const modalBox = document.getElementById('modal-card-box');
+      modalBox.className = 'modal-card modal-lg';
+
+      document.getElementById('modal-title').textContent = `Detail Dokumen Resmi: ${doc.doc_no}`;
+      document.getElementById('modal-body-content').innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 0.86rem; margin-bottom: 20px;">
+          <div><strong>Nomor Dokumen:</strong> ${doc.doc_no}</div>
+          <div><strong>Tanggal:</strong> ${doc.date}</div>
+          <div><strong>Jenis Aktivitas:</strong> <span class="badge-type ${type}">${type}</span></div>
+          <div><strong>Status Dokumen:</strong> <span class="badge-status ${doc.status}">${doc.status}</span></div>
+          <div><strong>Part Name:</strong> ${doc.part_name}</div>
+          <div><strong>Part No:</strong> ${doc.part_no}</div>
+          <div><strong>Subcount / Divisi:</strong> ${doc.subcount}</div>
+          <div><strong>Defect / Masalah:</strong> ${doc.defect}</div>
+          ${doc.classification ? `<div><strong>Klasifikasi:</strong> ${doc.classification}</div>` : ''}
+          ${doc.label ? `<div><strong>Tanda Dilabel:</strong> ${doc.label}</div>` : ''}
+          <div style="grid-column: 1 / -1;"><strong>Metode:</strong> ${doc.method || '-'}</div>
+          <div style="grid-column: 1 / -1;"><strong>Keterangan:</strong> ${doc.description || '-'}</div>
+          <div><strong>Checked By:</strong> ${doc.checked_by || '-'}</div>
+          <div><strong>Controlled By:</strong> ${doc.controlled_by || '-'}</div>
+          <div><strong>PIC:</strong> ${doc.pic_sortir || doc.pic_repair || '-'}</div>
+        </div>
+
+        <div class="form-calc-box" style="margin-bottom: 20px;">
+          <div class="calc-item"><span class="calc-title">QTY HOLD</span><span class="calc-val">${doc.qty_hold}</span></div>
+          <div class="calc-item"><span class="calc-title">QTY OK</span><span class="calc-val" style="color:var(--green-status);">${doc.qty_ok}</span></div>
+          <div class="calc-item"><span class="calc-title">QTY NG</span><span class="calc-val" style="color:var(--red);">${doc.qty_ng}</span></div>
+          <div class="calc-item"><span class="calc-title">SISA OPEN</span><span class="calc-val val-open">${doc.qty_open}</span></div>
+        </div>
+
+        <h4 style="font-size: 0.95rem; font-weight: bold; margin-bottom: 10px; color: var(--deep-green); border-bottom: 1px solid #E2E8F0; padding-bottom: 6px;">
+          Riwayat Progres Pemeriksaan Bertahap (${historyEntries.length} Catatan)
+        </h4>
+        <div class="table-responsive">
+          <table class="data-table" style="font-size: 0.8rem;">
+            <thead>
+              <tr>
+                <th>Waktu Update</th>
+                <th>PIC</th>
+                <th style="text-align:right;">+ OK</th>
+                <th style="text-align:right;">+ NG</th>
+                <th>Catatan / Keterangan</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${historyEntries.length === 0 ? `<tr><td colspan="5" style="text-align:center; padding:15px; color:#888;">Tidak ada data riwayat tambahan.</td></tr>` : ''}
+              ${historyEntries.map(h => `
+                <tr>
+                  <td>${h.timestamp}</td>
+                  <td><strong>${h.pic}</strong></td>
+                  <td style="text-align:right; color:var(--green-status); font-weight:bold;">+${h.added_ok}</td>
+                  <td style="text-align:right; color:var(--red); font-weight:bold;">+${h.added_ng}</td>
+                  <td>${h.note}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      document.getElementById('modal-footer-content').innerHTML = `
+        <button class="btn btn-outline" onclick="closeModal()">Tutup</button>
+        ${doc.status === 'OPEN' ? `<button class="btn btn-primary" onclick="closeModal(); showUpdateModal('${type}', ${doc.id});">⚡ Update Progres</button>` : ''}
+        <button class="btn btn-dark" onclick="previewPDF('${type}', ${doc.id})">📄 Preview & Print PDF</button>
+      `;
+
+      openModal();
+    }
+
+    /* =====================================================================
+       9. FORMAL COMPANY PDF GENERATOR
+       ===================================================================== */
+    function previewPDF(type, docId) {
+      const db = loadDB();
+      const doc = (type === 'SORTIR' ? db.data_sortir : db.data_repair).find(d => d.id === docId);
+      if (!doc) return;
+
+      const isSortir = type === 'SORTIR';
+      const title = isSortir ? 'FORM HASIL SORTIR' : 'FORM HASIL REPAIR';
+      const qtyColLabel = isSortir ? 'QTY SORTIR' : 'QTY REPAIR';
+      const picColLabel = isSortir ? 'PIC SORTIR' : 'PIC REPAIR';
+      const picName = isSortir ? doc.pic_sortir : doc.pic_repair;
+      const metodeLabel = isSortir ? 'METODE SORTIR' : 'METODE REPAIR';
+
+      const htmlContent = `
+        <div class="formal-sheet">
+          <div class="mwt-doc-container">
+            <!-- HEADER -->
+            <div class="mwt-doc-header">
+              <div class="mwt-logo-box">
+                <img src="logo.png" alt="Logo" style="width:50px;height:50px;object-fit:contain;margin-bottom:5px;">
+                <div class="mwt-company-title">PT. MADA WIKRI TUNGGAL</div>
+              </div>
+              <div class="mwt-header-title">
+                <h2>${title}</h2>
+              </div>
+            </div>
+
+            <!-- MAIN SPLIT BODY (METADATA LEFT, LOT & OPERATORS RIGHT) -->
+            <div class="mwt-main-split-body">
+              <!-- LEFT TABLE FORM ROWS -->
+              <div class="mwt-left-meta-col">
+                <table class="mwt-meta-table">
+                  <tbody>
+                    <tr>
+                      <td class="col-label">NO</td>
+                      <td class="col-colon">:</td>
+                      <td class="col-val">${doc.doc_no}</td>
+                    </tr>
+                    <tr>
+                      <td class="col-label">DAY/DATE</td>
+                      <td class="col-colon">:</td>
+                      <td class="col-val">${doc.date}</td>
+                    </tr>
+                    <tr>
+                      <td class="col-label">PART NO</td>
+                      <td class="col-colon">:</td>
+                      <td class="col-val">${doc.part_no || ''}</td>
+                    </tr>
+                    <tr>
+                      <td class="col-label">PART NAME</td>
+                      <td class="col-colon">:</td>
+                      <td class="col-val">${doc.part_name || ''}</td>
+                    </tr>
+                    <tr>
+                      <td class="col-label">MASALAH</td>
+                      <td class="col-colon">:</td>
+                      <td class="col-val">${doc.defect || ''}</td>
+                    </tr>
+                    <tr>
+                      <td class="col-label">SUBCOUNT/DIVISI</td>
+                      <td class="col-colon">:</td>
+                      <td class="col-val">${doc.subcount || ''}</td>
+                    </tr>
+                    <tr>
+                      <td class="col-label">${qtyColLabel}</td>
+                      <td class="col-colon">:</td>
+                      <td class="col-val">${doc.qty_hold}</td>
+                    </tr>
+                    <tr>
+                      <td class="col-label">QTY OK</td>
+                      <td class="col-colon">:</td>
+                      <td class="col-val">${doc.qty_ok}</td>
+                    </tr>
+                    <tr>
+                      <td class="col-label">QTY NG</td>
+                      <td class="col-colon">:</td>
+                      <td class="col-val">${doc.qty_ng}</td>
+                    </tr>
+                    ${isSortir ? `
+                    <tr>
+                      <td class="col-label">TANDA DILABEL</td>
+                      <td class="col-colon">:</td>
+                      <td class="col-val">${doc.label || '-'}</td>
+                    </tr>
+                    ` : ''}
+                    <tr>
+                      <td class="col-label">KETERANGAN</td>
+                      <td class="col-colon">:</td>
+                      <td class="col-val">${doc.description || '-'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- RIGHT SIDE: LOT & NAMA-NAMA PETUGAS SORTIR/REPAIR -->
+              <div class="mwt-right-side-box">
+                <!-- SECTION LOT -->
+                <div class="mwt-side-section" style="flex:1;">
+                  <div class="mwt-side-title">LOT:</div>
+                  <ul class="mwt-lot-list">
+                    ${(doc.lots && doc.lots.length > 0)
+                      ? doc.lots.map((l, i) => `<li>• ${escapeHtml(l)}</li>`).join('')
+                      : '<li style="color:#777; font-style:italic;">(Tidak ada LOT)</li>'}
+                  </ul>
+                </div>
+
+                <!-- SECTION PETUGAS SORTIR / REPAIR -->
+                <div class="mwt-side-section" style="flex:1.2; border-top:1px solid #000;">
+                  <div class="mwt-side-title">${isSortir ? 'NAMA-NAMA SORTIR:' : 'NAMA-NAMA REPAIR:'}</div>
+                  <ul class="mwt-pic-list">
+                    ${(doc.operators && doc.operators.length > 0)
+                      ? doc.operators.map((op, i) => `<li>${i + 1}. ${escapeHtml(op)}</li>`).join('')
+                      : `<li>1. ${escapeHtml(picName || '-')}</li>`}
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- BOTTOM METODE & TTD SECTION -->
+            <div class="mwt-bottom-section">
+              <div class="mwt-metode-box">
+                <div class="mwt-metode-header">${metodeLabel}:</div>
+                <div class="mwt-metode-content">${doc.method || '-'}</div>
+              </div>
+              <div class="mwt-sig-box">
+                <div class="mwt-sig-col">
+                  <div class="mwt-sig-title">CHECKED</div>
+                  <div class="mwt-sig-body">${doc.checked_by || '[TTD_CHECKED]'}</div>
+                </div>
+                <div class="mwt-sig-col">
+                  <div class="mwt-sig-title">CONTROLLED</div>
+                  <div class="mwt-sig-body">${doc.controlled_by || '[TTD_CONTROLLED]'}</div>
+                </div>
+                <div class="mwt-sig-col">
+                  <div class="mwt-sig-title">${picColLabel}</div>
+                  <div class="mwt-sig-body">${picName || ''}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('pdf-print-area').innerHTML = htmlContent;
+
+      const modalBox = document.getElementById('modal-card-box');
+      modalBox.className = 'modal-card modal-lg';
+      document.getElementById('modal-title').textContent = `Official Document Print Preview (${doc.doc_no})`;
+      document.getElementById('modal-body-content').innerHTML = htmlContent;
+      document.getElementById('modal-footer-content').innerHTML = `
+        <button class="btn btn-outline" onclick="closeModal()">Tutup</button>
+        <button class="btn btn-dark" onclick="downloadJsPDF('${type}', ${doc.id})">📥 Download File PDF</button>
+        <button class="btn btn-primary" onclick="window.print()">🖨️ Cetak / Print Dokumen</button>
+      `;
+
+      openModal();
+    }
+
+    async function downloadJsPDF(type, docId) {
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        window.print();
+        return;
+      }
+      const db = loadDB();
+      const doc = (type === 'SORTIR' ? db.data_sortir : db.data_repair).find(d => d.id === docId);
+      if (!doc) return;
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'mm', 'a4');
+
+      const isSortir = type === 'SORTIR';
+      const title = isSortir ? 'FORM HASIL SORTIR' : 'FORM HASIL REPAIR';
+      const qtyColLabel = isSortir ? 'QTY SORTIR' : 'QTY REPAIR';
+      const picColLabel = isSortir ? 'PIC SORTIR' : 'PIC REPAIR';
+      const picName = isSortir ? doc.pic_sortir : doc.pic_repair;
+      const metodeLabel = isSortir ? 'METODE SORTIR' : 'METODE REPAIR';
+
+      const startX = 15;
+      const startY = 15;
+      const totalW = 180;
+
+      // Outer Main Border Box
+      pdf.setDrawColor(0, 0, 0);
+      pdf.setLineWidth(0.4);
+
+      // Header Height: 26mm
+      const headerH = 26;
+      pdf.rect(startX, startY, totalW, headerH);
+
+      // Logo Box Left: 45mm width
+      const logoBoxW = 45;
+      pdf.rect(startX, startY, logoBoxW, headerH);
+
+      // Draw Logo Image
+      try {
+        const logoImg = new Image();
+        logoImg.src = 'logo.png';
+        await new Promise((resolve, reject) => {
+          logoImg.onload = resolve;
+          logoImg.onerror = reject;
+        });
+        const canvas = document.createElement('canvas');
+        canvas.width = logoImg.naturalWidth;
+        canvas.height = logoImg.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(logoImg, 0, 0);
+        const logoDataUrl = canvas.toDataURL('image/png');
+        pdf.addImage(logoDataUrl, 'PNG', startX + logoBoxW / 2 - 7, startY + 2, 14, 14);
+      } catch(e) {
+        // fallback: draw text if image fails
+        pdf.setDrawColor(8, 90, 54);
+        pdf.setLineWidth(0.8);
+        pdf.circle(startX + logoBoxW / 2, startY + 10, 7);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(14);
+        pdf.setTextColor(8, 90, 54);
+        pdf.text('mwt', startX + logoBoxW / 2, startY + 12, { align: 'center' });
+      }
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(6.5);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('PT. MADA WIKRI TUNGGAL', startX + logoBoxW / 2, startY + 22.5, { align: 'center' });
+
+      // Title Right
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(16);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(title, startX + logoBoxW + (totalW - logoBoxW) / 2, startY + 16, { align: 'center' });
+
+      // Build Table Data exactly matching reference
+      const tableData = [
+        ['NO', ':', String(doc.doc_no || '')],
+        ['DAY/DATE', ':', String(doc.date || '')],
+        ['PART NO', ':', String(doc.part_no || '')],
+        ['PART NAME', ':', String(doc.part_name || '')],
+        ['MASALAH', ':', String(doc.defect || '')],
+        ['SUBCOUNT/DIVISI', ':', String(doc.subcount || '')],
+        [qtyColLabel, ':', String(doc.qty_hold || '')],
+        ['QTY OK', ':', String(doc.qty_ok || '')],
+        ['QTY NG', ':', String(doc.qty_ng || '')]
+      ];
+
+      if (isSortir) {
+        tableData.push(['TANDA DILABEL', ':', String(doc.label || '-')]);
+      }
+      tableData.push(['KETERANGAN', ':', String(doc.description || '-')]);
+
+      const leftTableW = 125;
+      const rightSideW = totalW - leftTableW; // 55mm
+
+      pdf.autoTable({
+        startY: startY + headerH,
+        margin: { left: startX },
+        tableWidth: leftTableW,
+        body: tableData,
+        theme: 'plain',
+        styles: {
+          fontSize: 7.5,
+          font: 'helvetica',
+          fontStyle: 'bold',
+          textColor: [0, 0, 0],
+          lineColor: [0, 0, 0],
+          lineWidth: 0.3,
+          cellPadding: { top: 1.8, bottom: 1.8, left: 2.5, right: 2.5 }
+        },
+        columnStyles: {
+          0: { cellWidth: 38, fontStyle: 'bold' },
+          1: { cellWidth: 5, halign: 'center', fontStyle: 'bold' },
+          2: { fontStyle: 'normal' }
+        }
+      });
+
+      const tableEndY = pdf.lastAutoTable.finalY;
+      const leftTableH = tableEndY - (startY + headerH);
+
+      // Draw Right Side Box (LOT & Operator list)
+      const rightX = startX + leftTableW;
+      const rightY = startY + headerH;
+      pdf.setDrawColor(0, 0, 0);
+      pdf.setLineWidth(0.3);
+      pdf.rect(rightX, rightY, rightSideW, leftTableH);
+
+      // Split right box: Top half for LOT, bottom half for Operators
+      const lotBoxH = leftTableH * 0.45;
+      const opBoxH = leftTableH - lotBoxH;
+
+      // LOT Title
+      pdf.rect(rightX, rightY, rightSideW, 6);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.text('LOT:', rightX + 2.5, rightY + 4.5);
+
+      // LOT Items
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7.5);
+      let lotCurY = rightY + 10;
+      if (doc.lots && doc.lots.length > 0) {
+        doc.lots.forEach(l => {
+          if (lotCurY < rightY + lotBoxH - 1) {
+            pdf.text(`• ${l}`, rightX + 3, lotCurY);
+            lotCurY += 4.5;
+          }
+        });
+      } else {
+        pdf.text('-', rightX + 3, lotCurY);
+      }
+
+      // Operators Box
+      const opBoxY = rightY + lotBoxH;
+      pdf.rect(rightX, opBoxY, rightSideW, 6);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.text(isSortir ? 'NAMA-NAMA SORTIR:' : 'NAMA-NAMA REPAIR:', rightX + 2.5, opBoxY + 4.5);
+
+      // Operators Items
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7.5);
+      let opCurY = opBoxY + 10;
+      if (doc.operators && doc.operators.length > 0) {
+        doc.operators.forEach((op, idx) => {
+          if (opCurY < rightY + leftTableH - 1) {
+            pdf.text(`${idx + 1}. ${op}`, rightX + 3, opCurY);
+            opCurY += 4.5;
+          }
+        });
+      } else {
+        pdf.text(`1. ${picName || '-'}`, rightX + 3, opCurY);
+      }
+
+      // Bottom Section: Height 28mm
+      const bottomH = 28;
+      const metodeW = 55;
+      const sigTotalW = totalW - metodeW;
+      const sigColW = sigTotalW / 3;
+
+      // Metode Box Left
+      pdf.setDrawColor(0, 0, 0);
+      pdf.setLineWidth(0.4);
+      pdf.rect(startX, tableEndY, metodeW, bottomH);
+
+      // Metode Header line
+      pdf.rect(startX, tableEndY, metodeW, 7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.text(`${metodeLabel}:`, startX + 3, tableEndY + 5);
+
+      // Metode content
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.text(String(doc.method || '-'), startX + 3, tableEndY + 13);
+
+      // Signature 3 Columns Box
+      pdf.rect(startX + metodeW, tableEndY, sigTotalW, bottomH);
+
+      // Header row for signature
+      pdf.rect(startX + metodeW, tableEndY, sigTotalW, 7);
+
+      // Col 1: CHECKED
+      pdf.line(startX + metodeW + sigColW, tableEndY, startX + metodeW + sigColW, tableEndY + bottomH);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('CHECKED', startX + metodeW + sigColW / 2, tableEndY + 5, { align: 'center' });
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(doc.checked_by || '((TTD_CHECKED))', startX + metodeW + sigColW / 2, tableEndY + bottomH - 3, { align: 'center' });
+
+      // Col 2: CONTROLLED
+      pdf.line(startX + metodeW + sigColW * 2, tableEndY, startX + metodeW + sigColW * 2, tableEndY + bottomH);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('CONTROLLED', startX + metodeW + sigColW * 1.5, tableEndY + 5, { align: 'center' });
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(doc.controlled_by || '((TTD_CONTROLLED))', startX + metodeW + sigColW * 1.5, tableEndY + bottomH - 3, { align: 'center' });
+
+      // Col 3: PIC
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(picColLabel, startX + metodeW + sigColW * 2.5, tableEndY + 5, { align: 'center' });
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(picName || '', startX + metodeW + sigColW * 2.5, tableEndY + bottomH - 3, { align: 'center' });
+
+      pdf.save(`${doc.doc_no}.pdf`);
+    }
+
+    /* =====================================================================
+       10. PAGE: DATABASE PART
+       ===================================================================== */
+    function renderParts(container) {
+      const db = loadDB();
+      const parts = db.master_part || [];
+
+      container.innerHTML = `
+        <div class="card">
+          <div class="card-title">
+            <span>Database Master Part (${parts.length} Komponen)</span>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-primary btn-sm" onclick="showAddPartModal()">➕ Tambah Part Baru</button>
+              <button class="btn btn-dark btn-sm" onclick="showImportPartModal()">📥 Import Spreadsheet / CSV</button>
+              <button class="btn btn-danger btn-sm" onclick="clearAllParts()">🗑️ Kosongkan / Hapus Semua Part</button>
+              <button class="btn btn-outline btn-sm" onclick="exportPartCSV()">📤 Export CSV</button>
+            </div>
+          </div>
+
+          <div class="filter-row">
+            <div class="search-box">
+              <input type="text" id="part-search-input" class="form-control" placeholder="Cari Part Name atau Part No..." oninput="filterPartTable()" />
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table" id="master-part-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">No</th>
+                  <th>Part Name</th>
+                  <th>Part No</th>
+                  <th style="width: 140px; text-align:center;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${parts.length === 0 ? `<tr><td colspan="4" style="text-align:center; padding: 25px;">Belum ada data part. Klik tombol "Tambah Part Baru".</td></tr>` : ''}
+                ${parts.map((p, idx) => `
+                  <tr data-text="${(p.part_name + ' ' + p.part_no).toLowerCase()}">
+                    <td>${idx + 1}</td>
+                    <td><strong>${escapeHtml(p.part_name)}</strong></td>
+                    <td><span style="background:#F1F5F9; padding:3px 8px; border-radius:4px; font-weight:bold; color:var(--deep-green);">${escapeHtml(p.part_no)}</span></td>
+                    <td style="text-align:center;">
+                      <button class="btn btn-outline btn-sm" onclick="showEditPartModal(${p.id})">✏️ Edit</button>
+                      <button class="btn btn-danger btn-sm" onclick="deletePartItem(${p.id})">🗑️ Hapus</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function filterPartTable() {
+      const q = (document.getElementById('part-search-input')?.value || '').toLowerCase();
+      const rows = document.querySelectorAll('#master-part-table tbody tr[data-text]');
+      rows.forEach(r => {
+        r.style.display = r.dataset.text.includes(q) ? '' : 'none';
+      });
+    }
+
+    function showAddPartModal() {
+      const modalBox = document.getElementById('modal-card-box');
+      modalBox.className = 'modal-card';
+      document.getElementById('modal-title').textContent = "Tambah Part Baru ke Database";
+      document.getElementById('modal-body-content').innerHTML = `
+        <form id="form-add-part" onsubmit="handleSavePart(event)">
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label required">Part Name (Nama Komponen)</label>
+            <input type="text" id="new-part-name" class="form-control" placeholder="Contoh: Bracket Engine Mounting LH" required />
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label required">Part No (Nomor Part / Part Number)</label>
+            <input type="text" id="new-part-no" class="form-control" placeholder="Contoh: MWT-BEM-001" required />
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+            <button type="button" class="btn btn-outline" onclick="closeModal()">Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan Part</button>
+          </div>
+        </form>
+      `;
+      document.getElementById('modal-footer-content').innerHTML = '';
+      openModal();
+    }
+
+    function handleSavePart(e) {
+      e.preventDefault();
+      const name = document.getElementById('new-part-name').value.trim();
+      const no = document.getElementById('new-part-no').value.trim();
+
+      const db = loadDB();
+      if (!db.master_part) db.master_part = [];
+
+      db.master_part.push({
+        id: Date.now() + Math.random(),
+        part_name: name,
+        part_no: no
+      });
+
+      saveDB(db);
+      closeModal();
+      renderParts(document.getElementById('page-content'));
+    }
+
+    function showEditPartModal(id) {
+      const db = loadDB();
+      const part = (db.master_part || []).find(p => p.id === id);
+      if (!part) return;
+
+      const modalBox = document.getElementById('modal-card-box');
+      modalBox.className = 'modal-card';
+      document.getElementById('modal-title').textContent = "Edit Data Part";
+      document.getElementById('modal-body-content').innerHTML = `
+        <form id="form-edit-part" onsubmit="handleUpdatePart(event, ${part.id})">
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label required">Part Name</label>
+            <input type="text" id="edit-part-name" class="form-control" value="${escapeHtml(part.part_name)}" required />
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label required">Part No</label>
+            <input type="text" id="edit-part-no" class="form-control" value="${escapeHtml(part.part_no)}" required />
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+            <button type="button" class="btn btn-outline" onclick="closeModal()">Batal</button>
+            <button type="submit" class="btn btn-primary">Perbarui Part</button>
+          </div>
+        </form>
+      `;
+      document.getElementById('modal-footer-content').innerHTML = '';
+      openModal();
+    }
+
+    function handleUpdatePart(e, id) {
+      e.preventDefault();
+      const name = document.getElementById('edit-part-name').value.trim();
+      const no = document.getElementById('edit-part-no').value.trim();
+
+      const db = loadDB();
+      const part = (db.master_part || []).find(p => p.id === id);
+      if (!part) return;
+
+      part.part_name = name;
+      part.part_no = no;
+
+      saveDB(db);
+      closeModal();
+      renderParts(document.getElementById('page-content'));
+    }
+
+    function deletePartItem(id) {
+      if (!confirm("Apakah Anda yakin ingin menghapus Part ini dari database?")) return;
+      const db = loadDB();
+      db.master_part = (db.master_part || []).filter(p => p.id !== id);
+      saveDB(db);
+      renderParts(document.getElementById('page-content'));
+    }
+
+    function clearAllParts() {
+      if (!confirm("⚠️ PERINGATAN: Apakah Anda yakin ingin MENGHAPUS SEMUA DATA PART di database?\n\nDatabase part akan dikosongkan agar Anda dapat mengimpor data part baru yang bersih dari file CSV Anda.")) return;
+      const db = loadDB();
+      db.master_part = [];
+      saveDB(db);
+      alert("✅ Seluruh data part telah dihapus. Database part sekarang bersih dan kosong.");
+      renderParts(document.getElementById('page-content'));
+    }
+
+    function exportPartCSV() {
+      const db = loadDB();
+      const parts = db.master_part || [];
+      let csv = "Part Name,Part No\n";
+      parts.forEach(p => {
+        csv += `"${p.part_name.replace(/"/g, '""')}","${p.part_no.replace(/"/g, '""')}"\n`;
+      });
+      downloadTextFile(csv, "Master_Part_PT_Mada_Wikri_Tunggal.csv", "text/csv");
+    }
+
+    function showImportPartModal() {
+      const modalBox = document.getElementById('modal-card-box');
+      modalBox.className = 'modal-card modal-lg';
+      document.getElementById('modal-title').textContent = "Import Data Part dari Spreadsheet (Excel / CSV / Copy-Paste)";
+      document.getElementById('modal-body-content').innerHTML = `
+        <div style="background:#F0FDF4; border:1px solid #86EFAC; border-radius:8px; padding:14px; margin-bottom:16px;">
+          <h4 style="color:var(--forest-green); font-size:0.95rem; margin-bottom:6px;">📌 Cara Import dari Spreadsheet (Excel / Google Sheets):</h4>
+          <ol style="font-size:0.83rem; color:#334155; padding-left:18px; line-height:1.6;">
+            <li><strong>Cara 1 (Upload File):</strong> Simpan / download spreadsheet Anda sebagai file <code>.xlsx</code>, <code>.xls</code>, atau <code>.csv</code>, lalu pilih file pada tombol di bawah.</li>
+            <li><strong>Cara 2 (Copy-Paste Langsung):</strong> Blok kolom <strong>Part Name</strong> dan <strong>Part No</strong> di Excel / Google Sheets, tekan <strong>Ctrl + C</strong> (Copy), lalu paste langsung di kotak teks di bawah.</li>
+          </ol>
+          <div style="font-size:0.78rem; color:#64748B; margin-top:6px;">
+            * Format kolom yang diharapkan: Kolom 1 = <strong>Nama Part</strong>, Kolom 2 = <strong>Part No</strong>. (Baris header / judul kolom otomatis dilewati).
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:15px;">
+          <label class="form-label" style="font-weight:bold;">Pilih File Excel / CSV (.xlsx, .xls, .csv):</label>
+          <input type="file" id="spreadsheet-file-input" accept=".xlsx,.xls,.csv,.txt" class="form-control" onchange="handleSpreadsheetFile(event)" />
+        </div>
+
+        <div class="form-group" style="margin-bottom:15px;">
+          <label class="form-label" style="font-weight:bold;">Atau Paste Data Tabel dari Spreadsheet di Sini:</label>
+          <textarea id="csv-paste-area" class="form-control" rows="6" placeholder="Contoh jika copy-paste dari Excel (tab atau koma terpisah):&#10;Bracket Engine LH	MWT-BEM-001&#10;Bracket Engine RH	MWT-BEM-002&#10;Cover Cylinder	MWT-CCH-205" oninput="previewSpreadsheetImport()"></textarea>
+        </div>
+
+        <div id="import-preview-box" style="display:none; margin-top:10px;">
+          <h5 style="font-size:0.85rem; color:var(--deep-green); margin-bottom:6px;">Pratinjau Data yang Terdeteksi (<span id="import-count-badge">0</span> item siap diimpor):</h5>
+          <div style="max-height:160px; overflow-y:auto; border:1px solid #E2E8F0; border-radius:6px;">
+            <table class="data-table" style="font-size:0.78rem;">
+              <thead>
+                <tr>
+                  <th style="width:40px;">#</th>
+                  <th>Part Name</th>
+                  <th>Part No</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="import-preview-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      `;
+      document.getElementById('modal-footer-content').innerHTML = `
+        <button class="btn btn-outline" onclick="closeModal()">Batal</button>
+        <button class="btn btn-primary" id="btn-do-import" onclick="executeImportPart()">📥 Masukkan ke Database</button>
+      `;
+      openModal();
+    }
+
+    // Handle Upload File Excel / CSV
+    function handleSpreadsheetFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const fileName = file.name.toLowerCase();
+
+      // If XLSX / XLS and SheetJS is available
+      if ((fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) && window.XLSX) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          try {
+            const data = new Uint8Array(evt.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+            let parsedLines = [];
+            rows.forEach(r => {
+              if (r && r.length >= 2 && r[0] !== undefined && r[1] !== undefined) {
+                const pName = String(r[0]).trim();
+                const pNo = String(r[1]).trim();
+                if (pName && pNo) {
+                  parsedLines.push(`${pName}\t${pNo}`);
+                }
+              }
+            });
+
+            document.getElementById('csv-paste-area').value = parsedLines.join('\n');
+            previewSpreadsheetImport();
+          } catch (err) {
+            alert("Gagal membaca file Excel: " + err.message);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        // CSV or TXT fallback
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          document.getElementById('csv-paste-area').value = evt.target.result;
+          previewSpreadsheetImport();
+        };
+        reader.readAsText(file);
+      }
+    }
+
+    // Helper: Split single CSV line respecting quotes e.g. "Bracket, LH",MWT-001
+    function splitCSVLine(line) {
+      let sep = ',';
+      if (line.includes('\t')) sep = '\t';
+      else if (line.includes(';') && !line.includes(',')) sep = ';';
+
+      const result = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') {
+          inQuotes = !inQuotes;
+        } else if (c === sep && !inQuotes) {
+          result.push(cur.trim());
+          cur = '';
+        } else {
+          cur += c;
+        }
+      }
+      result.push(cur.trim());
+      return result.map(s => s.replace(/^["']|["']$/g, '').trim());
+    }
+
+    // Helper: Parse lines from paste / file
+    function parseSpreadsheetInput(text) {
+      if (!text) return [];
+      const lines = text.split(/\r?\n/);
+      const items = [];
+
+      lines.forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+
+        const parts = splitCSVLine(trimmed);
+
+        if (parts.length >= 2) {
+          let name = '';
+          let no = '';
+
+          // If 3 columns: often No, Part Name, Part No (e.g. 1, Bracket, MWT-001)
+          if (parts.length >= 3 && !isNaN(parts[0])) {
+            name = parts[1];
+            no = parts[2];
+          } else {
+            name = parts[0];
+            no = parts[1];
+          }
+
+          // Skip headers like "part name", "nama part", "no", "part no"
+          const lowerName = name.toLowerCase();
+          const lowerNo = no.toLowerCase();
+          if (
+            (lowerName === 'part name' || lowerName === 'nama part' || lowerName === 'nama' || lowerName === 'part_name' || lowerName === 'name') &&
+            (lowerNo === 'part no' || lowerNo === 'nomor part' || lowerNo === 'no part' || lowerNo === 'part_no' || lowerNo === 'part number')
+          ) {
+            return;
+          }
+
+          if (name && no) {
+            items.push({ part_name: name, part_no: no });
+          }
+        }
+      });
+      return items;
+    }
+
+    // Preview detected items
+    function previewSpreadsheetImport() {
+      const text = document.getElementById('csv-paste-area')?.value.trim() || '';
+      const items = parseSpreadsheetInput(text);
+      const previewBox = document.getElementById('import-preview-box');
+      const tbody = document.getElementById('import-preview-tbody');
+      const badge = document.getElementById('import-count-badge');
+
+      if (!previewBox || !tbody) return;
+
+      if (items.length === 0) {
+        previewBox.style.display = 'none';
+        return;
+      }
+
+      badge.textContent = items.length;
+      tbody.innerHTML = items.slice(0, 100).map((it, idx) => {
+        return `
+          <tr>
+            <td>${idx + 1}</td>
+            <td><strong>${escapeHtml(it.part_name)}</strong></td>
+            <td>${escapeHtml(it.part_no)}</td>
+            <td>
+              <span style="color:#16A34A; font-weight:bold;">Akan Ditambahkan</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      if (items.length > 100) {
+        tbody.innerHTML += `<tr><td colspan="4" style="text-align:center; color:#64748B;">... dan ${items.length - 100} item lainnya</td></tr>`;
+      }
+
+      previewBox.style.display = 'block';
+    }
+
+    function executeImportPart() {
+      const text = document.getElementById('csv-paste-area').value.trim();
+      if (!text) return alert("Pilih file atau paste data spreadsheet terlebih dahulu!");
+
+      const items = parseSpreadsheetInput(text);
+      if (items.length === 0) {
+        return alert("Tidak ada data part yang valid terdeteksi! Pastikan ada kolom Part Name dan Part No.");
+      }
+
+      const db = loadDB();
+      if (!db.master_part) db.master_part = [];
+
+      let added = 0;
+
+      items.forEach(it => {
+        db.master_part.push({
+          id: Date.now() + Math.random(),
+          part_name: it.part_name,
+          part_no: it.part_no
+        });
+        added++;
+      });
+
+      saveDB(db);
+      closeModal();
+
+      alert(`✅ Berhasil! Semua ${added} data part telah berhasil dimasukkan ke dalam database tanpa ada yang dilewati.`);
+      renderParts(document.getElementById('page-content'));
+    }
+
+    /* =====================================================================
+       11. PAGE: STATISTIK SORTIR
+       ===================================================================== */
+    function renderStatsSortir(container) {
+      const db = loadDB();
+      const list = db.data_sortir || [];
+      const currentYear = new Date().getFullYear();
+
+      const years = Array.from(new Set(list.map(d => d.date?.substring(0, 4)).filter(Boolean))).sort();
+      if (!years.includes(String(currentYear))) years.push(String(currentYear));
+
+      let totalHold = 0, totalOk = 0, totalNg = 0, totalOpen = 0, totalClosed = 0;
+      list.forEach(d => {
+        totalHold += (parseInt(d.qty_hold) || 0);
+        totalOk += (parseInt(d.qty_ok) || 0);
+        totalNg += (parseInt(d.qty_ng) || 0);
+        if (d.status === 'OPEN') totalOpen++;
+        if (d.status === 'CLOSED') totalClosed++;
+      });
+
+      container.innerHTML = `
+        <div class="card">
+          <div class="card-title">
+            <span>Statistik Khusus Frekuensi Sortir</span>
+            <div class="filter-row" style="margin-bottom:0;">
+              <select id="stats-sortir-year" class="form-control" onchange="updateSortirCharts()">
+                ${years.map(y => `<option value="${y}" ${y == currentYear ? 'selected' : ''}>Tahun ${y}</option>`).join('')}
+              </select>
+              <select id="stats-sortir-class" class="form-control" onchange="updateSortirCharts()">
+                <option value="ALL">Semua Klasifikasi Sortir</option>
+                <option value="Sortir Temuan Problem">1. Sortir Temuan Problem</option>
+                <option value="Cek Output">2. Cek Output</option>
+                <option value="MP OJT">3. MP OJT</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="stats-grid" style="margin-top: 15px;">
+            <div class="stat-card sortir"><span class="stat-label">Total Frekuensi Sortir</span><span class="stat-val">${list.length}</span><span class="stat-sub">Dokumen Dibuat</span></div>
+            <div class="stat-card hold"><span class="stat-label">Total Qty Hold</span><span class="stat-val">${totalHold.toLocaleString()}</span><span class="stat-sub">Pcs Barang</span></div>
+            <div class="stat-card ok"><span class="stat-label">Total Qty OK</span><span class="stat-val" style="color:var(--green-status);">${totalOk.toLocaleString()}</span><span class="stat-sub">Lolos Sortir</span></div>
+            <div class="stat-card ng"><span class="stat-label">Total Qty NG</span><span class="stat-val" style="color:var(--red);">${totalNg.toLocaleString()}</span><span class="stat-sub">Reject / Defect</span></div>
+            <div class="stat-card open"><span class="stat-label">Sortir OPEN</span><span class="stat-val" style="color:#D97706;">${totalOpen}</span><span class="stat-sub">Belum Selesai</span></div>
+            <div class="stat-card closed"><span class="stat-label">Sortir CLOSED</span><span class="stat-val" style="color:var(--green-status);">${totalClosed}</span><span class="stat-sub">Selesai 100%</span></div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 20px;">
+            <div class="card" style="margin-bottom:0;">
+              <h3 style="font-size:1rem; color:var(--deep-green); margin-bottom:12px;">Grafik Frekuensi Sortir Bulanan (Januari - Desember)</h3>
+              <p style="font-size:0.75rem; color:#64748B; margin-bottom:10px;">Sumbu Y = Frekuensi Dokumen Dibuat</p>
+              <div style="height: 260px;"><canvas id="chart-sortir-monthly"></canvas></div>
+            </div>
+            <div class="card" style="margin-bottom:0;">
+              <h3 style="font-size:1rem; color:var(--deep-green); margin-bottom:12px;">Perbandingan Frekuensi Tahunan</h3>
+              <p style="font-size:0.75rem; color:#64748B; margin-bottom:10px;">Tren Antar Tahun</p>
+              <div style="height: 260px;"><canvas id="chart-sortir-yearly"></canvas></div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      updateSortirCharts();
+    }
+
+    function updateSortirCharts() {
+      const db = loadDB();
+      const list = db.data_sortir || [];
+      const selectedYear = parseInt(document.getElementById('stats-sortir-year')?.value) || new Date().getFullYear();
+      const selectedClass = document.getElementById('stats-sortir-class')?.value || 'ALL';
+
+      const filtered = list.filter(d => {
+        if (!d.date) return false;
+        const matchesClass = selectedClass === 'ALL' || d.classification === selectedClass;
+        return matchesClass;
+      });
+
+      const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+      const monthlyCounts = new Array(12).fill(0);
+
+      filtered.forEach(d => {
+        const dt = new Date(d.date);
+        if (dt.getFullYear() === selectedYear) {
+          monthlyCounts[dt.getMonth()]++;
+        }
+      });
+
+      const yearMap = {};
+      filtered.forEach(d => {
+        const y = new Date(d.date).getFullYear();
+        yearMap[y] = (yearMap[y] || 0) + 1;
+      });
+      const yearLabels = Object.keys(yearMap).sort();
+      if (!yearLabels.includes(String(selectedYear))) yearLabels.push(String(selectedYear));
+      const yearCounts = yearLabels.map(y => yearMap[y] || 0);
+
+      if (window.sortirMonthlyChartInstance) window.sortirMonthlyChartInstance.destroy();
+      if (window.sortirYearlyChartInstance) window.sortirYearlyChartInstance.destroy();
+
+      const mCtx = document.getElementById('chart-sortir-monthly');
+      if (mCtx) {
+        window.sortirMonthlyChartInstance = new Chart(mCtx, {
+          type: 'bar',
+          data: {
+            labels: months,
+            datasets: [{
+              label: `Frekuensi Dokumen Sortir (${selectedYear})`,
+              data: monthlyCounts,
+              backgroundColor: '#00B889',
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+          }
+        });
+      }
+
+      const yCtx = document.getElementById('chart-sortir-yearly');
+      if (yCtx) {
+        window.sortirYearlyChartInstance = new Chart(yCtx, {
+          type: 'bar',
+          data: {
+            labels: yearLabels,
+            datasets: [{
+              label: 'Total Frekuensi per Tahun',
+              data: yearCounts,
+              backgroundColor: '#0B5138',
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+          }
+        });
+      }
+    }
+
+    /* =====================================================================
+       12. PAGE: STATISTIK REPAIR
+       ===================================================================== */
+    function renderStatsRepair(container) {
+      const db = loadDB();
+      const list = db.data_repair || [];
+      const currentYear = new Date().getFullYear();
+
+      const years = Array.from(new Set(list.map(d => d.date?.substring(0, 4)).filter(Boolean))).sort();
+      if (!years.includes(String(currentYear))) years.push(String(currentYear));
+
+      let totalHold = 0, totalOk = 0, totalNg = 0, totalOpen = 0, totalClosed = 0;
+      list.forEach(d => {
+        totalHold += (parseInt(d.qty_hold) || 0);
+        totalOk += (parseInt(d.qty_ok) || 0);
+        totalNg += (parseInt(d.qty_ng) || 0);
+        if (d.status === 'OPEN') totalOpen++;
+        if (d.status === 'CLOSED') totalClosed++;
+      });
+
+      container.innerHTML = `
+        <div class="card">
+          <div class="card-title">
+            <span>Statistik Khusus Frekuensi Repair</span>
+            <div class="filter-row" style="margin-bottom:0;">
+              <select id="stats-repair-year" class="form-control" onchange="updateRepairCharts()">
+                ${years.map(y => `<option value="${y}" ${y == currentYear ? 'selected' : ''}>Tahun ${y}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+
+          <div class="stats-grid" style="margin-top: 15px;">
+            <div class="stat-card repair"><span class="stat-label">Total Frekuensi Repair</span><span class="stat-val">${list.length}</span><span class="stat-sub">Dokumen Dibuat</span></div>
+            <div class="stat-card hold"><span class="stat-label">Total Qty Hold Repair</span><span class="stat-val">${totalHold.toLocaleString()}</span><span class="stat-sub">Pcs Barang</span></div>
+            <div class="stat-card ok"><span class="stat-label">Total Qty OK Repair</span><span class="stat-val" style="color:var(--green-status);">${totalOk.toLocaleString()}</span><span class="stat-sub">Selesai Diperbaiki</span></div>
+            <div class="stat-card ng"><span class="stat-label">Total Qty NG Repair</span><span class="stat-val" style="color:var(--red);">${totalNg.toLocaleString()}</span><span class="stat-sub">Gagal Repair</span></div>
+            <div class="stat-card open"><span class="stat-label">Repair OPEN</span><span class="stat-val" style="color:#D97706;">${totalOpen}</span><span class="stat-sub">Dalam Proses</span></div>
+            <div class="stat-card closed"><span class="stat-label">Repair CLOSED</span><span class="stat-val" style="color:var(--green-status);">${totalClosed}</span><span class="stat-sub">Selesai 100%</span></div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 20px;">
+            <div class="card" style="margin-bottom:0;">
+              <h3 style="font-size:1rem; color:var(--deep-green); margin-bottom:12px;">Grafik Frekuensi Repair Bulanan (Januari - Desember)</h3>
+              <p style="font-size:0.75rem; color:#64748B; margin-bottom:10px;">Sumbu Y = Frekuensi Dokumen Repair Dibuat</p>
+              <div style="height: 260px;"><canvas id="chart-repair-monthly"></canvas></div>
+            </div>
+            <div class="card" style="margin-bottom:0;">
+              <h3 style="font-size:1rem; color:var(--deep-green); margin-bottom:12px;">Perbandingan Frekuensi Repair Tahunan</h3>
+              <p style="font-size:0.75rem; color:#64748B; margin-bottom:10px;">Tren Antar Tahun</p>
+              <div style="height: 260px;"><canvas id="chart-repair-yearly"></canvas></div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      updateRepairCharts();
+    }
+
+    function updateRepairCharts() {
+      const db = loadDB();
+      const list = db.data_repair || [];
+      const selectedYear = parseInt(document.getElementById('stats-repair-year')?.value) || new Date().getFullYear();
+
+      const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+      const monthlyCounts = new Array(12).fill(0);
+
+      list.forEach(d => {
+        if (!d.date) return;
+        const dt = new Date(d.date);
+        if (dt.getFullYear() === selectedYear) {
+          monthlyCounts[dt.getMonth()]++;
+        }
+      });
+
+      const yearMap = {};
+      list.forEach(d => {
+        if (!d.date) return;
+        const y = new Date(d.date).getFullYear();
+        yearMap[y] = (yearMap[y] || 0) + 1;
+      });
+      const yearLabels = Object.keys(yearMap).sort();
+      if (!yearLabels.includes(String(selectedYear))) yearLabels.push(String(selectedYear));
+      const yearCounts = yearLabels.map(y => yearMap[y] || 0);
+
+      if (window.repairMonthlyChartInstance) window.repairMonthlyChartInstance.destroy();
+      if (window.repairYearlyChartInstance) window.repairYearlyChartInstance.destroy();
+
+      const mCtx = document.getElementById('chart-repair-monthly');
+      if (mCtx) {
+        window.repairMonthlyChartInstance = new Chart(mCtx, {
+          type: 'bar',
+          data: {
+            labels: months,
+            datasets: [{
+              label: `Frekuensi Dokumen Repair (${selectedYear})`,
+              data: monthlyCounts,
+              backgroundColor: '#0284C7',
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+          }
+        });
+      }
+
+      const yCtx = document.getElementById('chart-repair-yearly');
+      if (yCtx) {
+        window.repairYearlyChartInstance = new Chart(yCtx, {
+          type: 'bar',
+          data: {
+            labels: yearLabels,
+            datasets: [{
+              label: 'Total Frekuensi Repair per Tahun',
+              data: yearCounts,
+              backgroundColor: '#0369A1',
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+          }
+        });
+      }
+    }
+
+    /* =====================================================================
+       13. PAGE: PENGATURAN & BACKUP DATABASE
+       ===================================================================== */
+    function renderSettings(container) {
+      const db = loadDB();
+      const sCount = (db.data_sortir || []).length;
+      const rCount = (db.data_repair || []).length;
+      const pCount = (db.master_part || []).length;
+
+      container.innerHTML = `
+        <div class="card">
+          <div class="card-title">
+            <span>Pengaturan Sistem & Manajemen Database Lokal</span>
+          </div>
+
+          <div style="margin-bottom: 25px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 18px;">
+            <h3 style="font-size: 1rem; color: var(--deep-green); margin-bottom: 8px;">Informasi Database Saat Ini</h3>
+            <ul style="list-style: none; font-size: 0.88rem; color: #334155; line-height: 1.8;">
+              <li>✔️ <strong>Total Master Part:</strong> ${pCount} komponen</li>
+              <li>✔️ <strong>Total Dokumen Sortir:</strong> ${sCount} dokumen</li>
+              <li>✔️ <strong>Total Dokumen Repair:</strong> ${rCount} dokumen</li>
+              <li>✔️ <strong>Lokasi Penyimpanan:</strong> Browser Local Storage & SQLite Engine (Tersimpan Permanen)</li>
+              <li>✔️ <strong>Status Koneksi:</strong> 100% Offline Lokal (Tanpa Google Sheets / Tanpa Server Eksternal)</li>
+            </ul>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="card" style="margin-bottom:0;">
+              <h3 style="font-size: 1rem; color: var(--forest-green); margin-bottom: 8px;">💾 Backup Database</h3>
+              <p style="font-size: 0.82rem; color: #64748B; margin-bottom: 15px;">
+                Download seluruh data database SQLite lokal ke file komputer Anda sebagai arsip cadangan yang aman.
+              </p>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <button class="btn btn-primary" onclick="exportDatabaseFile()">💾 Download Backup Database (.db)</button>
+                <button class="btn btn-outline" onclick="exportDatabaseSQL()">📄 Export SQLite SQL Script (.sql)</button>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom:0;">
+              <h3 style="font-size: 1rem; color: var(--forest-green); margin-bottom: 8px;">📥 Restore Database</h3>
+              <p style="font-size: 0.82rem; color: #64748B; margin-bottom: 15px;">
+                Pulihkan data dari file backup yang pernah Anda simpan sebelumnya.
+              </p>
+              <input type="file" id="restore-file-input" accept=".db,.json,.sqlite" class="form-control" style="margin-bottom: 12px;" />
+              <button class="btn btn-dark" onclick="handleRestoreDatabase()">🔄 Pulihkan Data dari File</button>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 25px; border-color: #FCA5A5; background: #FFF5F5;">
+            <h3 style="font-size: 1rem; color: var(--red); margin-bottom: 8px;">⚠️ Reset Data Pabrik</h3>
+            <p style="font-size: 0.82rem; color: #991B1B; margin-bottom: 15px;">
+              Tindakan ini akan mengembalikan data ke contoh awal PT Mada Wikri Tunggal. Pastikan Anda sudah membackup data sebelum mereset.
+            </p>
+            <button class="btn btn-danger" onclick="handleResetDatabase()">Kembalikan ke Data Default Awal</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function exportDatabaseFile() {
+      const db = loadDB();
+      const json = JSON.stringify(db, null, 2);
+      const filename = `Backup_QC_Mada_Wikri_Tunggal_${new Date().toISOString().substring(0,10)}.db`;
+      downloadTextFile(json, filename, "application/json");
+    }
+
+    function exportDatabaseSQL() {
+      const db = loadDB();
+      let sql = `-- QC SORTIR & REPAIR MONITORING SYSTEM - PT MADA WIKRI TUNGGAL\n`;
+      sql += `-- Generated: ${new Date().toISOString()}\n\n`;
+
+      sql += `CREATE TABLE IF NOT EXISTS master_part (id INTEGER PRIMARY KEY, part_name TEXT, part_no TEXT);\n`;
+      (db.master_part || []).forEach(p => {
+        sql += `INSERT INTO master_part (id, part_name, part_no) VALUES (${p.id}, '${escapeSql(p.part_name)}', '${escapeSql(p.part_no)}');\n`;
+      });
+
+      sql += `\nCREATE TABLE IF NOT EXISTS data_sortir (id INTEGER PRIMARY KEY, doc_no TEXT, date TEXT, classification TEXT, part_name TEXT, part_no TEXT, defect TEXT, subcount TEXT, qty_hold INTEGER, qty_ok INTEGER, qty_ng INTEGER, qty_open INTEGER, status TEXT);\n`;
+      (db.data_sortir || []).forEach(s => {
+        sql += `INSERT INTO data_sortir VALUES (${s.id}, '${s.doc_no}', '${s.date}', '${escapeSql(s.classification)}', '${escapeSql(s.part_name)}', '${escapeSql(s.part_no)}', '${escapeSql(s.defect)}', '${escapeSql(s.subcount)}', ${s.qty_hold}, ${s.qty_ok}, ${s.qty_ng}, ${s.qty_open}, '${s.status}');\n`;
+      });
+
+      sql += `\nCREATE TABLE IF NOT EXISTS data_repair (id INTEGER PRIMARY KEY, doc_no TEXT, date TEXT, part_name TEXT, part_no TEXT, defect TEXT, subcount TEXT, qty_hold INTEGER, qty_ok INTEGER, qty_ng INTEGER, qty_open INTEGER, status TEXT);\n`;
+      (db.data_repair || []).forEach(r => {
+        sql += `INSERT INTO data_repair VALUES (${r.id}, '${r.doc_no}', '${r.date}', '${escapeSql(r.part_name)}', '${escapeSql(r.part_no)}', '${escapeSql(r.defect)}', '${escapeSql(r.subcount)}', ${r.qty_hold}, ${r.qty_ok}, ${r.qty_ng}, ${r.qty_open}, '${r.status}');\n`;
+      });
+
+      downloadTextFile(sql, `SQLite_Schema_Mada_${new Date().toISOString().substring(0,10)}.sql`, "text/plain");
+    }
+
+    function handleRestoreDatabase() {
+      const fileInput = document.getElementById('restore-file-input');
+      const file = fileInput?.files[0];
+      if (!file) return alert("Pilih file backup (.db atau .json) terlebih dahulu!");
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const restored = JSON.parse(evt.target.result);
+          if (!restored.master_part || (!restored.data_sortir && !restored.data_repair)) {
+            throw new Error("Format file tidak valid!");
+          }
+          saveDB(restored);
+          alert("✅ Berhasil memulihkan seluruh data dari file backup!");
+          location.hash = '#/dashboard';
+          location.reload();
+        } catch (err) {
+          alert("Gagal membaca file: Format tidak sesuai atau file rusak.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function handleResetDatabase() {
+      if (!confirm("Peringatan: Semua data yang Anda buat akan dihapus dan dikembalikan ke awal. Lanjutkan?")) return;
+      localStorage.removeItem(DB_STORAGE_KEY);
+      alert("Database telah direset ke default.");
+      location.hash = '#/dashboard';
+      location.reload();
+    }
+
+    /* =====================================================================
+       14. UTILITY HELPERS
+       ===================================================================== */
+    function openModal() {
+      document.getElementById('app-modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('app-modal').classList.remove('active');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escapeSql(str) {
+      if (!str) return '';
+      return String(str).replace(/'/g, "''");
+    }
+
+    function downloadTextFile(content, fileName, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    }
+  </script>
+</body>
+</html>
